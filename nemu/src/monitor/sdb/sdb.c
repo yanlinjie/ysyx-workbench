@@ -17,13 +17,17 @@
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <memory/paddr.h>
+#include "/home/ylj/ysyx-workbench/nemu/src/isa/riscv32/local-include/reg.h"
 #include "sdb.h"
 
 static int is_batch_mode = false;
 
 void init_regex();
 void init_wp_pool();
-
+void sdb_watchpoint_display();
+void delete_watchpoint(int no);
+void create_watchpoint(char* args);
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
   static char *line_read = NULL;
@@ -42,6 +46,110 @@ static char* rl_gets() {
   return line_read;
 }
 
+static int cmd_p(char* args){
+    if(args == NULL){
+        printf("No args\n");
+        return 0;
+    }
+     printf("args = %s\n", args);
+    bool flag = false;
+    expr(args, &flag);
+    return 0;
+}
+
+static int cmd_x(char *args){
+    char* n = strtok(args," ");
+    char* origin_addr = strtok(NULL," ");
+    int len = 0;
+    paddr_t addr = 0;
+    sscanf(n, "%d", &len);
+    sscanf(origin_addr,"%x", &addr);
+    for(int i = 0 ; i < len ; i ++)
+    {
+        // uint32_t data = vaddr_read(addr, 4);
+        uint32_t data = paddr_read(addr, 4);
+        printf("0x%x\n",data);//addr len
+        addr = addr + 4;
+    }
+    return 0;
+}
+
+// static int cmd_a(char *args) {
+//     if (args == NULL) {
+//         printf("Usage: a <register> <value>\n");
+//         return 0;
+//     }
+
+    // char reg_name[10];     // 存储寄存器名称
+    // uint32_t new_value;    // 新值
+
+    // // 从命令行参数解析寄存器名称和值
+    // int ret = sscanf(args, "%s %x", reg_name, &new_value);
+    // if (ret != 2) {
+    //     printf("Invalid arguments. Usage: a <register> <value>\n");
+    //     return 0;
+    // }
+
+    // // 检查寄存器名称的合法性并修改值
+    // for (int i = 0; i < 32; i++) {
+    //     if (strcmp(reg_name, regs[i]) == 0) { // 通过寄存器名称找到对应编号
+    //         cpu.gpr[i] = new_value; // 修改通用寄存器的值
+    //         printf("Set register %s to 0x%x\n", reg_name, new_value);
+    //         return 0;
+    //     }
+    // }
+
+//     // 如果未找到寄存器
+//     printf("Invalid register name: %s\n", reg_name);
+//     return 0;
+// }
+
+
+// static int cmd_a(char *args){
+
+//     uint32_t new_value = 0x12345678;
+//      paddr_t addr = 0x80000000;
+
+//  paddr_write(addr, 4 , new_value);
+
+//     return 0;
+// }
+
+static int cmd_d (char *args){
+    if(args == NULL)
+        printf("No args.\n");
+    else{
+        delete_watchpoint(atoi(args));
+    }
+    return 0;
+}
+static int cmd_w(char* args){
+    create_watchpoint(args);
+    return 0;
+}
+
+//print program state
+static int cmd_info(char *args){
+    if(args == NULL)
+        printf("No args\n");
+    else if(strcmp(args, "r") == 0) //print reg state
+        isa_reg_display();
+    else if(strcmp(args, "w" )== 0)
+        sdb_watchpoint_display();
+    return 0;
+}
+
+//单步执行
+static int cmd_si(char *args){
+    int step = 0;
+    if(args == NULL)
+        step = 1;
+    else
+        sscanf(args,"%d",&step);// 读入 Step
+    cpu_exec(step);
+    return 0;
+}
+
 static int cmd_c(char *args) {
   cpu_exec(-1);
   return 0;
@@ -49,6 +157,7 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
+  nemu_state.state = NEMU_QUIT;//修复按q后的error
   return -1;
 }
 
@@ -64,10 +173,16 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
-
+  { "si", "step by step , default value:1", cmd_si },
+  { "info", "info r:print reg;  info w: print monitor point message", cmd_info },
+  { "x", "scan memery", cmd_x },
+  { "p", "caculate expression", cmd_p },
+  { "w", "set monitor ", cmd_w },
+  { "d", "delete monitor", cmd_d }
+  // { "a", "change value", cmd_a}
 };
 
-#define NR_CMD ARRLEN(cmd_table)
+#define NR_CMD ARRLEN(cmd_table)   //ARRLEN // calculate the length of an array
 
 static int cmd_help(char *args) {
   /* extract the first argument */

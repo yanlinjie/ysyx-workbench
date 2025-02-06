@@ -32,8 +32,8 @@ static void welcome() {
   Log("Build time: %s, %s", __TIME__, __DATE__);
   printf("Welcome to %s-NEMU!\n", ANSI_FMT(str(__GUEST_ISA__), ANSI_FG_YELLOW ANSI_BG_RED));
   printf("For help, type \"help\"\n");
-  Log("Exercise: Please remove me in the source code and compile NEMU again.");
-  assert(0);
+  // Log("Exercise: Please remove me in the source code and compile NEMU again.");
+  // assert(0);
 }
 
 #ifndef CONFIG_TARGET_AM
@@ -78,6 +78,7 @@ static int parse_args(int argc, char *argv[]) {
     {0          , 0                , NULL,  0 },
   };
   int o;
+  //getopt_long()对参数解析
   while ( (o = getopt_long(argc, argv, "-bhl:d:p:", table, NULL)) != -1) {
     switch (o) {
       case 'b': sdb_set_batch_mode(); break;
@@ -101,16 +102,16 @@ static int parse_args(int argc, char *argv[]) {
 void init_monitor(int argc, char *argv[]) {
   /* Perform some global initialization. */
 
-  /* Parse arguments. */
+  /* Parse arguments. *///解析命令行参数，argc-参数计数，argv-参数数组。
   parse_args(argc, argv);
 
-  /* Set random seed. */
+  /* Set random seed. *////* 设置随机数 */
   init_rand();
 
-  /* Open the log file. */
+  /* Open the log file. *///日志
   init_log(log_file);
 
-  /* Initialize memory. */
+  /* Initialize memory. *///内存
   init_mem();
 
   /* Initialize devices. */
