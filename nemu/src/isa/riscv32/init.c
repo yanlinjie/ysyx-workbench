@@ -19,10 +19,10 @@
 // this is not consistent with uint8_t
 // but it is ok since we do not access the array directly
 static const uint32_t img [] = {
-  0x00000297,  // auipc t0,0
-  0x00028823,  // sb  zero,16(t0)
-  0x0102c503,  // lbu a0,16(t0)
-  0x00100073,  // ebreak (used as nemu_trap)
+  0x00000297,  // auipc t0,0 (计算当前pc地址并存入t0)
+  0x00028823,  // sb  zero,16(t0) (向 t0 + 16 处存储 0)
+  0x0102c503,  // lbu a0,16(t0)    (从 t0 + 16 读取数据到 a0)
+  0x00100073,  // ebreak (used as nemu_trap)    触发 NEMU 模拟器的 trap
   0xdeadbeef,  // some data
 };
 
