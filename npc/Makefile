@@ -1,4 +1,4 @@
-TOPNAME = open_risc_v
+TOPNAME = top
 INC_PATH := ./vsrc \
             /home/ylj/ysyx-workbench/nemu/include
 
@@ -6,7 +6,8 @@ INC_PATH := ./vsrc \
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
 				-O3 --x-assign fast --x-initial fast --noassert  -Wno-UNOPTFLAT  \
-				--trace
+				--trace \
+				--Wno-LATCH
 
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir

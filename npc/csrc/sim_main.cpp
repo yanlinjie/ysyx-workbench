@@ -1,6 +1,6 @@
 #include "verilated.h"
-#include "Vopen_risc_v.h"
-#include "Vopen_risc_v__Syms.h"
+#include "Vtop.h"
+#include "Vtop__Syms.h"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -28,7 +28,7 @@ extern "C" {
 
 
 
-Vopen_risc_v* top = new Vopen_risc_v();
+Vtop* top = new Vtop();
 uint32_t rom_mem[ROM_SIZE] = {0};
 
 typedef struct {
@@ -205,7 +205,7 @@ void load_bin_to_data_mem(const char* bin_file_path) {
           std::cerr << "Error: .bin file too large for data memory!" << std::endl;
           break;
       }
-      top->rootp->open_risc_v__DOT__DATA_MEM__DOT__data[idx] = static_cast<uint8_t>(byte);
+      // top->rootp->top__DOT__DATA_MEM__DOT__data[idx] = static_cast<uint8_t>(byte);
       idx++;
   }
 
@@ -234,7 +234,7 @@ void load_bin_to_inst_mem(const char* bin_file_path) {
                       ((uint8_t)bytes[3] << 24);
 
       // 写入 instruction_mem 的 rom_mem
-      top->rootp->open_risc_v__DOT__INSTRUCTION_MEM__DOT__rom_mem[idx] = inst;
+      top->rootp->top__DOT__u_dual_ram_template__DOT__memory[idx] = inst;
       idx++;
   }
 
@@ -260,85 +260,41 @@ void init_difftest(const char* ref_so_file, long img_size, int port) {
   difftest_regcpy(&cpu, DIFFTEST_TO_REF);
 }
 
-extern "C" void dpi_exit_simulation() {
-  int state = top->rootp->open_risc_v__DOT__REG_FILE__DOT__regs[10];
-    printf("[INFO] ebreak instruction encountered. Ending simulation.");
-    if (state)
-    printf("\033[1;31mHIT BAD TRAP\033[0m at pc = 0x%08x\n", top->pc);  // 红色
-  else
-    printf("\033[1;32mHIT GOOD TRAP\033[0m at pc = 0x%08x\n", top->pc); // 绿色
-  exit(0);
-}
+// extern "C" void dpi_exit_simulation() {
+//   // int state = top->rootp->top__DOT__REG_FILE__DOT__regs[10];
+//     printf("[INFO] ebreak instruction encountered. Ending simulation.");
+//     if (state)
+//     printf("\033[1;31mHIT BAD TRAP\033[0m at pc = 0x%08x\n", top->pc);  // 红色
+//   else
+//     printf("\033[1;32mHIT GOOD TRAP\033[0m at pc = 0x%08x\n", top->pc); // 绿色
+//   exit(0);
+// }
 
 static void welcome() {
   printf("Welcome to -NPC!\n");
 }
 
 int main(int argc, char** argv) {
-  // printf("[DEBUG] main() started\n");
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <path to .bin>\n";
-    return -1;
-  }
+
+  // if (argc < 2) {
+  //   std::cerr << "Usage: " << argv[0] << " <path to .bin>\n";
+  //   return -1;
+  // }
   load_bin_to_inst_mem(argv[1]);  // 在 reset 之后，仿真主循环之前
 
   rst(10);
 
-  cpu.pc = top->pc;
-  for (int i = 0; i < 32; ++i)
-    cpu.gpr[i] = top->rootp->open_risc_v__DOT__REG_FILE__DOT__regs[i];
-
-  long program_size = load_program(argv[1]);
-  load_bin_to_data_mem(argv[1]);
-  // init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
-
+  printf("inst: %x\n inst %x", top->rootp->top__DOT__u_dual_ram_template__DOT__memory[0],top->rootp->top__DOT__u_dual_ram_template__DOT__memory[1]);
   welcome();
-// return 0;
+
   int cycle_count = 0;
   while (true) {
-    uint32_t pc = top->pc;
-    //uint32_t inst = fetch_instruction(pc);
-    // printf("cpu.pc = 0x%08x\n", top->pc);
-    // printf("inst = 0x%08x\n", top->instruction);
-    
-    // top->instruction = inst;
-
-    // ring_buffer_push(pc, top->instruction_out);  // 👈 加入 ring buffer
+    // cycle_count ++;
+    // printf("cycle_count = %d",cycle_count);
 
     single_cycle();
 
-//debug diff
-    // cpu.pc = top->pc;
-    // for (int i = 0; i < 32; ++i)
-    //   cpu.gpr[i] = top->rootp->open_risc_v__DOT__REG_FILE__DOT__regs[i];
-    // difftest_exec(1);
-    // difftest_regcpy(&ref, DIFFTEST_TO_DUT);
-    // if (!isa_difftest_checkregs(&ref, &cpu)) {
-    //   ring_buffer_print();  // 👈 打印 ring buffer
-    //   printf("cycle_count = %d\n", cycle_count);
-    //   exit(1);
-    // }
-    // if (cpu.pc == 0x8000017c)
-    // {
 
-
-  //   for (int i = 0; i < 32; ++i) {
-  //     // cpu.gpr[i] = top->rootp->open_risc_v__DOT__REG_FILE__DOT__regs[i];
-  //     printf("x%-2d: 0x%08x  ", i, ref.gpr[i]);
-  //     if ((i + 1) % 4 == 0) printf("\n");
-  // }
-
-  //     for (int i = 0; i < 32; ++i) {
-  //       cpu.gpr[i] = top->rootp->open_risc_v__DOT__REG_FILE__DOT__regs[i];
-  //       printf("x%-2d: 0x%08x  ", i, cpu.gpr[i]);
-  //       if ((i + 1) % 4 == 0) printf("\n");
-  //   }
-    
-        // exit(1);
-    // }
-    
-    // cycle_count++;
-    // printf("cycle_count = %d\n", cycle_count);
   }
 
 }
