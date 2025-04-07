@@ -23,7 +23,7 @@ void init_difftest(char *ref_so_file, long img_size, int port);
 void init_device();
 void init_sdb();
 void init_disasm();
-
+  RingBuffer rb;
 static void welcome() {
   Log("Trace: %s", MUXDEF(CONFIG_TRACE, ANSI_FMT("ON", ANSI_FG_GREEN), ANSI_FMT("OFF", ANSI_FG_RED)));
   IFDEF(CONFIG_TRACE, Log("If trace is enabled, a log file will be generated "
@@ -70,7 +70,7 @@ static long load_img() {
 
 static int parse_args(int argc, char *argv[]) {
   const struct option table[] = {
-    {"batch"    , no_argument      , NULL, 'b'},
+    {"batch"    , no_argument      , NULL, 'b'},//批处理模式
     {"log"      , required_argument, NULL, 'l'},
     {"diff"     , required_argument, NULL, 'd'},
     {"port"     , required_argument, NULL, 'p'},
@@ -108,16 +108,16 @@ void init_monitor(int argc, char *argv[]) {
   /* Set random seed. *////* 设置随机数 */
   init_rand();
 
-  /* Open the log file. *///日志
+  /* Open the log file. *///日志 ysyx-workbench/nemu/src/utils/log.c
   init_log(log_file);
 
-  /* Initialize memory. *///内存
+  /* Initialize memory. *///内存 ysyx-workbench/nemu/src/memory/paddr.c
   init_mem();
 
   /* Initialize devices. */
   IFDEF(CONFIG_DEVICE, init_device());
 
-  /* Perform ISA dependent initialization. */
+  /* Perform ISA dependent initialization. */ //ysyx-workbench/nemu/src/isa/riscv32/init.c
   init_isa();
 
   /* Load the image to memory. This will overwrite the built-in image. */
@@ -133,6 +133,9 @@ void init_monitor(int argc, char *argv[]) {
 
   /* Display welcome message. */
   welcome();
+
+  // RingBuffer rb;
+  ring_buffer_init(&rb);
 }
 #else // CONFIG_TARGET_AM
 static long load_img() {
@@ -150,5 +153,7 @@ void am_init_monitor() {
   load_img();
   IFDEF(CONFIG_DEVICE, init_device());
   welcome();
+
+  ring_buffer_init(&rb);
 }
 #endif

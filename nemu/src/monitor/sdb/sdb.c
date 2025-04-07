@@ -74,46 +74,7 @@ static int cmd_x(char *args){
     return 0;
 }
 
-// static int cmd_a(char *args) {
-//     if (args == NULL) {
-//         printf("Usage: a <register> <value>\n");
-//         return 0;
-//     }
 
-    // char reg_name[10];     // 存储寄存器名称
-    // uint32_t new_value;    // 新值
-
-    // // 从命令行参数解析寄存器名称和值
-    // int ret = sscanf(args, "%s %x", reg_name, &new_value);
-    // if (ret != 2) {
-    //     printf("Invalid arguments. Usage: a <register> <value>\n");
-    //     return 0;
-    // }
-
-    // // 检查寄存器名称的合法性并修改值
-    // for (int i = 0; i < 32; i++) {
-    //     if (strcmp(reg_name, regs[i]) == 0) { // 通过寄存器名称找到对应编号
-    //         cpu.gpr[i] = new_value; // 修改通用寄存器的值
-    //         printf("Set register %s to 0x%x\n", reg_name, new_value);
-    //         return 0;
-    //     }
-    // }
-
-//     // 如果未找到寄存器
-//     printf("Invalid register name: %s\n", reg_name);
-//     return 0;
-// }
-
-
-// static int cmd_a(char *args){
-
-//     uint32_t new_value = 0x12345678;
-//      paddr_t addr = 0x80000000;
-
-//  paddr_write(addr, 4 , new_value);
-
-//     return 0;
-// }
 
 static int cmd_d (char *args){
     if(args == NULL)
@@ -179,7 +140,7 @@ static struct {
   { "p", "caculate expression", cmd_p },
   { "w", "set monitor ", cmd_w },
   { "d", "delete monitor", cmd_d }
-  // { "a", "change value", cmd_a}
+
 };
 
 #define NR_CMD ARRLEN(cmd_table)   //ARRLEN // calculate the length of an array

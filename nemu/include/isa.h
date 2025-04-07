@@ -37,6 +37,27 @@ word_t isa_reg_str2val(const char *name, bool *success);
 struct Decode;
 int isa_exec_once(struct Decode *s);
 
+#define RING_BUFFER_SIZE 10  // 环形缓冲区大小
+
+// 定义指令信息结构体
+typedef struct {
+    uint32_t address;  // 指令地址
+    uint32_t instruction;  // 指令内容（32位）
+} Instruction;
+
+// 定义环形缓冲区结构体
+typedef struct {
+    Instruction buffer[RING_BUFFER_SIZE];  // 缓冲区数组
+    int head;  // 写入位置
+    int tail;  // 读取位置
+    int full;  // 缓冲区是否已满
+} RingBuffer;
+extern  RingBuffer rb;
+// 函数声明
+void ring_buffer_init(RingBuffer *rb);
+void ring_buffer_write(RingBuffer *rb, uint32_t address, uint32_t instruction);
+void ring_buffer_print(RingBuffer *rb, uint32_t error_address);
+
 // memory
 enum { MMU_DIRECT, MMU_TRANSLATE, MMU_FAIL };
 enum { MEM_TYPE_IFETCH, MEM_TYPE_READ, MEM_TYPE_WRITE };

@@ -36,29 +36,6 @@ int main(int argc, char *argv[]) {
 #endif
 
 
-    // FILE *fp = fopen("/home/ylj/gdb_test/gen_expr/input", "r");
-    // // FILE *fp = fopen("/home/ylj/ysyx-workbench/nemu/tools/gen-expr/build/input", "r");
-
-    // if (fp == NULL) {
-    //     perror("Failed to open file");
-    //     return 1;
-    // }
-    // char line[MAX_LINE_LENGTH];  // 用来存储每一行的表达式
-    // while (fgets(line, sizeof(line), fp)) {
-    //     // 去除行末的换行符
-    //     line[strcspn(line, "\n")] = '\0';  // 去掉 '\n' 字符
-
-    //     // 查找第一个空格，跳过计算结果部分
-    //     char *expression = strchr(line, ' ');
-    //     if (expression != NULL) {
-    //         expression++;
-    //         printf("Expression: %s\n", expression);
-    //          expr(expression, &flag);
-
-    //   }
-    // }
-
-
   /* Start engine. */
   engine_start();
 

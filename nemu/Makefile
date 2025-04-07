@@ -13,7 +13,7 @@
 # See the Mulan PSL v2 for more details.
 #**************************************************************************************/
 
-# Sanity check
+# Sanity check wildcard：用来查找文件，$(wildcard $(NEMU_HOME)/src/nemu-main.c) 检查路径是否存在 nemu-main.c 文件
 ifeq ($(wildcard $(NEMU_HOME)/src/nemu-main.c),)
   $(error NEMU_HOME=$(NEMU_HOME) is not a NEMU repo)
 endif

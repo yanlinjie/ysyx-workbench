@@ -130,6 +130,15 @@ config CONFIG_WATCHPOINT
   bool "open watchpoint"
   default n
 
+config MTRACE
+  depends on TRACE && TARGET_NATIVE_ELF && ENGINE_INTERPRETER
+  bool "Enable memory tracer"
+  default y
+
+config DTRACE
+  bool "Enable dtrace"
+  default n
+
 config TRACE
   bool "Enable tracer"
   default y
@@ -216,5 +225,7 @@ endchoice
 config RT_CHECK
   bool "Enable runtime checking"
   default y
+
+
 
 endmenu

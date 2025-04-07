@@ -19,8 +19,16 @@ word_t isa_raise_intr(word_t NO, vaddr_t epc) {
   /* TODO: Trigger an interrupt/exception with ``NO''.
    * Then return the address of the interrupt/exception vector.
    */
+  // printf(" nemu : mepc = 0x%08x mcause = 0x%08x mtvec = 0x%08x\n " ,cpu.csr.mepc,cpu.csr.mcause ,cpu.csr.mtvec);//这个其实就可以相当于etrace
 
-  return 0;
+   if(NO==-1){
+    epc+=4;
+  }
+   cpu.csr.mcause = NO;//异常号
+   cpu.csr.mepc = epc;//触发异常的pc
+  // printf(" nemu : mepc = 0x%08x mcause = 0x%08x mtvec = 0x%08x\n " ,cpu.csr.mepc,cpu.csr.mcause ,cpu.csr.mtvec);//这个其实就可以相当于etrace
+   return cpu.csr.mtvec;//入口地址
+  // return 0;
 }
 
 word_t isa_query_intr() {

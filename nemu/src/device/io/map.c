@@ -52,12 +52,26 @@ void init_map() {
   p_space = io_space;
 }
 
+void dtrace_read_log(IOMap *map, paddr_t addr, int len, word_t data) {
+  printf("dtrace[READ ]: Device = %-8s | addr = 0x%08x | pc = 0x%08x | len = %d | data = 0x%08x\n",
+         map->name, addr, cpu.pc, len, data);
+}
+
+void dtrace_write_log(IOMap *map, paddr_t addr, int len, word_t data) {
+  printf("dtrace[WRITE]: Device = %-8s | addr = 0x%08x | pc = 0x%08x | len = %d | data = 0x%08x\n",
+         map->name, addr, cpu.pc, len, data);
+}
+
 word_t map_read(paddr_t addr, int len, IOMap *map) {
   assert(len >= 1 && len <= 8);
   check_bound(map, addr);
   paddr_t offset = addr - map->low;
   invoke_callback(map->callback, offset, len, false); // prepare data to read
+
   word_t ret = host_read(map->space + offset, len);
+  IFDEF(CONFIG_DTRACE, dtrace_read_log(map, addr, len, ret););
+    // printf("dtrace: Device = %s | addr = 0x%08x | pc = 0x%08x | len = %d | data = 0x%08x\n",
+    //   map->name, addr, cpu.pc, len, ret);
   return ret;
 }
 
@@ -65,6 +79,11 @@ void map_write(paddr_t addr, int len, word_t data, IOMap *map) {
   assert(len >= 1 && len <= 8);
   check_bound(map, addr);
   paddr_t offset = addr - map->low;
-  host_write(map->space + offset, len, data);
+
+  host_write(map->space + offset, len, data);//memory
+  IFDEF(CONFIG_DTRACE, dtrace_write_log(map, addr, len, data););
+  // printf("dtrace: Device = %s | addr = 0x%08x | pc = 0x%08x | len = %d | data = 0x%08x\n",
+  //   map->name, addr, cpu.pc, len, data);
   invoke_callback(map->callback, offset, len, true);
 }
+
