@@ -74,7 +74,7 @@ extern "C" void monitor_mem_write(uint32_t addr, uint32_t data, uint32_t wtype) 
     if (oaddr == 0xa00003f8) 
     {
       // printf("[MEM WRITE] \n");
-      printf("%c\n", odata);//直接使用printf 打印出数据
+      printf("%c", odata);//直接使用printf 打印出数据
       // exit(0);
     }
 }
@@ -220,6 +220,7 @@ void load_bin_to_inst_mem(const char* bin_file_path) {
   }
 
   int idx = 0;
+  int cnt = 0;
   char bytes[4];
   while (file.read(bytes, 4)) {
       if (idx >= 40960000) {
@@ -235,7 +236,11 @@ void load_bin_to_inst_mem(const char* bin_file_path) {
 
       // 写入 instruction_mem 的 rom_mem
       top->rootp->open_risc_v__DOT__INSTRUCTION_MEM__DOT__rom_mem[idx] = inst;
+      printf("inst = %08x; addr = %08x ; idx = %d\n",inst , cnt ,idx);
       idx++;
+      
+      cnt = cnt +4;
+      
   }
 
   std::cout << "Loaded " << idx << " instructions into INSTRUCTION_MEM.rom_mem[]" << std::endl;
@@ -275,6 +280,13 @@ static void welcome() {
 }
 
 int main(int argc, char** argv) {
+
+  FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
+  if (reg_dump == nullptr) {
+      perror("Failed to open regdump.txt");
+      exit(1);
+  }
+
   // printf("[DEBUG] main() started\n");
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <path to .bin>\n";
@@ -298,14 +310,24 @@ int main(int argc, char** argv) {
   while (true) {
     uint32_t pc = top->pc;
     //uint32_t inst = fetch_instruction(pc);
-    printf("cpu.pc = 0x%08x\n", top->pc);
-    printf("inst = 0x%08x\n", top->instruction);
+    // printf("cpu.pc = 0x%08x\n", top->pc);
+    // printf("inst = 0x%08x\n", top->instruction);
     
     // top->instruction = inst;
 
     // ring_buffer_push(pc, top->instruction_out);  // 👈 加入 ring buffer
-
+    fprintf(reg_dump, "\n========= Register File =========\n");
+    fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->pc,top->instruction);
+    for (int i = 0; i < 32; i++) {
+        fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->open_risc_v__DOT__REG_FILE__DOT__regs[i]);
+        if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
+    }
+    fprintf(reg_dump, "=================================\n\n");
     single_cycle();
+
+
+
+
 
 //debug diff
     // cpu.pc = top->pc;
