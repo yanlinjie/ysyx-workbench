@@ -99,7 +99,7 @@ always @(*) begin
                         next_state = WAIT_MEM_WRITE_READY;    
                     end else begin
                         wvalid = 1'b1;
-                        ls_write_mem_addr = mem_addr;
+                        ls_write_mem_addr = mem_addr>>2;
                         ls_mem_data = rs2_data;
                         next_state = WAIT_READY;
                     end

@@ -225,6 +225,7 @@ void load_bin_to_inst_mem(const char* bin_file_path) {
   }
 
   int idx = 0;
+  int cnt = 0;
   char bytes[4];
   while (file.read(bytes, 4)) {
       if (idx >= 40960000) {
@@ -240,7 +241,10 @@ void load_bin_to_inst_mem(const char* bin_file_path) {
       // printf("%08x\n",inst);
       // 写入 instruction_mem 的 rom_mem
       top->rootp->top__DOT__u_dual_ram_template__DOT__memory[idx] = inst;
+      // printf("inst = %08x; addr = %08x ; idx = %d\n",inst , cnt ,idx);
       idx++;
+      
+      cnt = cnt +4;
   }
 
   std::cout << "Loaded " << idx << " instructions into INSTRUCTION_MEM.rom_mem[]" << std::endl;
@@ -297,6 +301,7 @@ int main(int argc, char** argv) {
   load_bin_to_inst_mem(argv[1]);  // 在 reset 之后，仿真主循环之前
 
   rst(10);
+
 
   int cycle_count = 0;
   while (true) {

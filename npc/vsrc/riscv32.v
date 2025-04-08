@@ -44,7 +44,7 @@ wire                   [  31:0]         next_inst                  ;
 always @(*) begin
     arvalid   = 1'b0;
     if (read_mem_falg) begin
-        raddr = ls_read_mem_addr;
+        raddr = (ls_read_mem_addr >>2);
         arvalid   = ls_arvalid;
         rready = ls_rready;
     end else   begin
