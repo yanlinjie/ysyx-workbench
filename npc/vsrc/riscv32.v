@@ -53,12 +53,22 @@ always @(*) begin
         rready = if_rready;
     end
 end
+reg [31:0] wb_rddata_1;
+always @(*) begin
+    case(ls_read_mem_addr[1:0])
+        2'b00:wb_rddata_1 = rdata;
+        2'b01:wb_rddata_1 = {24'b0, rdata[15:8] } ;
+        2'b10:wb_rddata_1 = {24'b0, rdata[23:16]} ;   
+        2'b11:wb_rddata_1 = {24'b0, rdata[31:24]} ;
+        // 2'b10:wb_rddata_1 = rdata[23:16];
+        // 2'b11:wb_rddata_1 = rdata[31:24];
 
-
+    endcase
+end
 
 wire [31:0]  wb_rddata;//to wbu
 assign next_inst = rvalid? rdata : inst;//
-assign wb_rddata = rvalid? rdata : wb_rddata;//忘了进行对读数据拓展！！！我是sb
+assign wb_rddata = rvalid? wb_rddata_1 : wb_rddata;//忘了进行对读数据拓展！！！我是sb
 
 
 
