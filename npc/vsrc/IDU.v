@@ -1,3 +1,4 @@
+import "DPI-C" function void dpi_exit_simulation();
 module IDU (
     input clk, 
     input rst, //高电平有效
@@ -82,7 +83,7 @@ always @(posedge clk) begin
 end
 //还是使用组合逻辑吧！这样可以对齐时钟周期
     always @(*) begin
-         if (id_start) begin  //当处于IDLE状态时,并且指令有效时,则在下一周期的上升沿开始译码！
+        //  if (id_start) begin  //当处于IDLE状态时,并且指令有效时,则在下一周期的上升沿开始译码！
             // // opcode <= instruction[6:0];
             rs2_addr =instruction[24:20];
             rs1_addr =instruction[19:15];
@@ -374,16 +375,53 @@ end
                         end
                     endcase
                 end
+                    // ebreak
+                7'b1110011:begin
+                    // write_reg = 0;
+                    // write_csr_reg = 0;
+                    // aluOut_WB_memOut = 0;
+                    // rs1Data_EX_PC = 0;
+                    // rs2Data_EX_imm32_4 = 2'b01;
+                    // write_mem = 2'b00;
+                    // read_mem = 3'b000;
+                    
+                    // pcImm_NEXTPC_rs1Imm = 2'b00;
+                    // extOP = 3'b000;
+                    dpi_exit_simulation();
+                    case (func3)
+                        3'b000:  begin  //ecall and ebreak
+                            // aluc = 5'b10011;
+                            if (func7 ==7'b0011000 ) begin
+                                // aluc = 5'b10101;
+                            end
+                        end//dpi_exit_simulation(); // ebreak// 调用DPI-C函数，结束仿真
+                        3'b001:   begin//csrrw
+                        // write_csr_reg = 1;
+                        //     aluc = 5'b10010;
+                        end//csrrw
+                        3'b010: begin //csrrs
+                        // write_csr_reg = 1;
+                        //     aluc = 5'b10100;
+                        end
+
+                        default: begin
+                            
+                        end
+                    endcase
+                    
+                    // nemu_trap(pc);
+                    
+                end
                 default: begin
                 end
 
             endcase
-        end
+        // end
     end
 // reg [31:0] imm_32;
 //不能使用if (state == IDLE && pc_valid),可能会因为前者imm_ctr还未执行完,导致这里使用default值！
 always @(*) begin
-     if (id_start) begin
+    //  if (id_start) begin
 
         case (imm_ctr)
             3'b000:begin 
@@ -414,7 +452,7 @@ always @(*) begin
             end 
         endcase
         
-     end
+    //  end
 end
 
 

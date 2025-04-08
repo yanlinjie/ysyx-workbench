@@ -7,14 +7,14 @@ module mux3_1(
 );
 
 always @(*) begin
-    if(start) begin
+    // if(start) begin
         case (signal)
             2'b00: out = a;
             2'b01: out = b;
             2'b10: out = c;
             default: out = 32'b0; // 可选的默认情况，避免综合警告
         endcase
-    end
+    // end
 
 end
 

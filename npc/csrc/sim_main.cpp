@@ -1,4 +1,5 @@
 #include "verilated.h"
+#include "verilated_vcd_c.h"
 #include "Vtop.h"
 #include "Vtop__Syms.h"
 #include <iostream>
@@ -26,9 +27,13 @@ extern "C" {
 
 
 
-
+// VerilatedVcdC *tfp = nullptr;   // 2. 声明全局 tfp
+vluint64_t main_time = 0;       // 3. 声明主时间变量
+double sc_time_stamp() { return main_time; }
 
 Vtop* top = new Vtop();
+VerilatedVcdC* tfp = new VerilatedVcdC();  // VCD 波形对象
+
 uint32_t rom_mem[ROM_SIZE] = {0};
 
 typedef struct {
@@ -151,8 +156,8 @@ bool isa_difftest_checkregs(CPU_state *ref_r, CPU_state *dut) {
 }
 
 static void single_cycle() {
-  top->clk = 1; top->eval();
-  top->clk = 0; top->eval();
+  top->clk = 1; top->eval();tfp->dump(main_time++);
+  top->clk = 0; top->eval();tfp->dump(main_time++);
 
 }
 
@@ -232,7 +237,7 @@ void load_bin_to_inst_mem(const char* bin_file_path) {
                       ((uint8_t)bytes[1] << 8) |
                       ((uint8_t)bytes[2] << 16) |
                       ((uint8_t)bytes[3] << 24);
-
+      // printf("%08x\n",inst);
       // 写入 instruction_mem 的 rom_mem
       top->rootp->top__DOT__u_dual_ram_template__DOT__memory[idx] = inst;
       idx++;
@@ -260,15 +265,17 @@ void init_difftest(const char* ref_so_file, long img_size, int port) {
   difftest_regcpy(&cpu, DIFFTEST_TO_REF);
 }
 
-// extern "C" void dpi_exit_simulation() {
-//   // int state = top->rootp->top__DOT__REG_FILE__DOT__regs[10];
-//     printf("[INFO] ebreak instruction encountered. Ending simulation.");
-//     if (state)
-//     printf("\033[1;31mHIT BAD TRAP\033[0m at pc = 0x%08x\n", top->pc);  // 红色
-//   else
-//     printf("\033[1;32mHIT GOOD TRAP\033[0m at pc = 0x%08x\n", top->pc); // 绿色
-//   exit(0);
-// }
+extern "C" void dpi_exit_simulation() {
+  int state = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[10];
+    printf("[INFO] ebreak instruction encountered. Ending simulation.");
+    if (state)
+    printf("\033[1;31mHIT BAD TRAP\033[0m at pc = 0x%08x\n",top->rootp->top__DOT__u_riscv32__DOT__pc);  // 红色
+  else
+    printf("\033[1;32mHIT GOOD TRAP\033[0m at pc = 0x%08x\n", top->rootp->top__DOT__u_riscv32__DOT__pc); // 绿色
+    delete top;
+    delete tfp;
+  exit(state);
+}
 
 static void welcome() {
   printf("Welcome to -NPC!\n");
@@ -276,25 +283,43 @@ static void welcome() {
 
 int main(int argc, char** argv) {
 
-  // if (argc < 2) {
-  //   std::cerr << "Usage: " << argv[0] << " <path to .bin>\n";
-  //   return -1;
-  // }
+  FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
+  if (reg_dump == nullptr) {
+      perror("Failed to open regdump.txt");
+      exit(1);
+  }
+  Verilated::traceEverOn(true);
+  // VerilatedVcdC *tfp = new VerilatedVcdC;
+  tfp = new VerilatedVcdC;
+  top->trace(tfp, 99);      // 99 是层级深度
+  tfp->open("wave.vcd");    // 波形文件名
+
   load_bin_to_inst_mem(argv[1]);  // 在 reset 之后，仿真主循环之前
 
   rst(10);
 
-  printf("inst: %x\n inst %x", top->rootp->top__DOT__u_dual_ram_template__DOT__memory[0],top->rootp->top__DOT__u_dual_ram_template__DOT__memory[1]);
-  welcome();
-
   int cycle_count = 0;
   while (true) {
-    // cycle_count ++;
-    // printf("cycle_count = %d",cycle_count);
+
 
     single_cycle();
-
-
+    
+fprintf(reg_dump, "\n========= Register File =========\n");
+fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->rootp->top__DOT__u_riscv32__DOT__pc,top->rootp->top__DOT__u_riscv32__DOT__inst);
+for (int i = 0; i < 32; i++) {
+    fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i]);
+    if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
+}
+fprintf(reg_dump, "=================================\n\n");
+  
+    if (++cycle_count > 10000000) {
+      printf("[ERROR] Timeout: Too many cycles.\n");
+      break;
+    }
   }
+  tfp->close();
+  delete top;
+  delete tfp;
+  return -1;
 
 }

@@ -61,7 +61,6 @@ wire [31:0] alu_a;
 wire [31:0] alu_b;
 wire [31:0] out;
 reg [31:0] current_pc;
-wire condition_branch;
 
     // 状态转移
 always @(posedge clk or posedge rst) begin
@@ -74,7 +73,7 @@ always @(posedge clk or posedge rst) begin
 
 end
 
-
+wire condition_branch;
 // 状态机逻辑
 //jump_pc 可以直接在exu中计算，不管是B型指令，还是jal 还是jalr！
 //对于B型指令，则直接传送给IFU
@@ -123,7 +122,7 @@ always @(posedge clk) begin
 end
 
 always @(*) begin 
-    if(ex_start) begin
+    // if(ex_start) begin
         if (out_rddata_memaddr) out_mem_addr = out;
         else out_rd = out ;
         //输出给下一个模块 
@@ -137,7 +136,7 @@ always @(*) begin
         // ex_imm = imm;
         ex_jump = jump;
         ex_rs2_data = rs2_data;
-    end  
+    // end  
     // else out_mem_addr = 1'b0;
 end
 

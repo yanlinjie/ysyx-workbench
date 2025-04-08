@@ -71,7 +71,7 @@ always @(posedge clk or posedge rst) begin
     end
     else if (state == IDLE && ls_valid)
     begin
-        if (|jump) begin
+        if (jump[0]||jump[1]) begin
             next_pc <= jump_next_pc;
         end else next_pc <= pc + 4;//执行完一条指令后指令 + 4
 

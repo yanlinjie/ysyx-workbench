@@ -18,9 +18,10 @@ module alu (
 
   // ========= 组合逻辑 =========
   always @(*) begin
-    if(start) begin
-    out = 32'b0;
     condition_branch = 1'b0;
+
+    // if(start) begin
+    out = 32'b0;
     case (aluc)
       5'b00000: out = a + b;
       5'b00001: out = a - b;
@@ -44,7 +45,8 @@ module alu (
             default:begin
       end
     endcase
-    end else condition_branch = 1'b0;//维持一个时钟周期 , 不然会对后续有影响。！！！
+    // end 
+    // else condition_branch = 1'b0;//维持一个时钟周期 , 不然会对后续有影响。！！！
 end
 
 
