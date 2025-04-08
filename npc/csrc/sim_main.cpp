@@ -62,13 +62,13 @@ extern "C" int pmem_read(uint32_t raddr) {
 }
 
 extern "C" void monitor_mem_read(uint32_t addr, uint32_t data) {
-    printf("[MEM READ] PC = 0x%08x,  address = 0x%08x, data = 0x%08x\n",cpu.pc, addr, data);
+    // printf("[MEM READ] PC = 0x%08x,  address = 0x%08x, data = 0x%08x\n",top->pc, addr, data);
     // if (addr == 0xa000048) ;
 }
 
 extern "C" void monitor_mem_write(uint32_t addr, uint32_t data, uint32_t wtype) {
     const char* type_str = (wtype == 1) ? "WORD" : (wtype == 2) ? "HALF" : "BYTE";
-    printf("[MEM WRITE] PC = 0x%08x, type = %s, address = 0x%08x, data = 0x%08x\n",cpu.pc , type_str, addr, data);
+    printf("[MEM WRITE] PC = 0x%08x, type = %s, address = 0x%08x, data = 0x%08x\n",top->pc , type_str, addr, data);
     uint32_t oaddr = addr;
     uint32_t odata = data;
     if (oaddr == 0xa00003f8) 
