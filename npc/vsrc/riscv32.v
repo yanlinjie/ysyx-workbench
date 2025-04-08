@@ -53,6 +53,22 @@ always @(*) begin
         rready = if_rready;
     end
 end
+
+//write
+reg [31:0] wdata_1;
+always @(*) begin
+    case(ls_read_mem_addr[1:0])
+        2'b00:wdata_1 = rdata;
+        2'b01:wdata_1 = {24'b0, rdata[15:8] } ;
+        2'b10:wdata_1 = {24'b0, rdata[23:16]} ;   
+        2'b11:wdata_1 = {24'b0, rdata[31:24]} ;
+        // 2'b10:wb_rddata_1 = rdata[23:16];
+        // 2'b11:wb_rddata_1 = rdata[31:24];
+
+    endcase
+end
+
+//read 会存在不能被4整除的情况
 reg [31:0] wb_rddata_1;
 always @(*) begin
     case(ls_read_mem_addr[1:0])
