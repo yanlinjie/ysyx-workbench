@@ -135,7 +135,7 @@ always @(*) begin
                         // $display("6666 imm = %h  csr_rd_data = %h  mtvec = %h pc = %h ", imm ,csr_rd_data , mtvec ,pc);
 
                      end
-                     5'b10100:begin //csrrw
+                     5'b10100:begin //csrrs
                         case (imm)
                             32'h305:begin
                                 write_csr_en = 1'b1;
@@ -178,20 +178,24 @@ always @(*) begin
                     
                     5'b10011:begin //csrrw
                                 case (imm)
-                                    32'h305:mtvec = rs1_data | mtvec;
-                                    32'h300:mstatus = rs1_data | mstatus;
-                                    32'h342:mcause = rs1_data | mcause;
-                                    32'h341:mepc = rs1_data | mepc;       
+                                    32'h305:mtvec = rs1_data;
+                                    32'h300:mstatus = rs1_data;
+                                    32'h342:mcause = rs1_data;
+                                    32'h341:mepc = rs1_data;  
+                                    // 32'h305:mtvec = rs1_data | mtvec;
+                                    // 32'h300:mstatus = rs1_data | mstatus;
+                                    // 32'h342:mcause = rs1_data | mcause;
+                                    // 32'h341:mepc = rs1_data | mepc;       
                                 endcase
                                 ex_valid = 1'b1;
                                 next_state = IDLE;
                             end
-                    5'b10100:begin //csrrw
+                    5'b10100:begin //csrrs
                                 case (imm)
-                                    32'h305:mtvec = rs1_data;
-                                    32'h300:mstatus = rs1_data;
-                                    32'h342:mcause = rs1_data;
-                                    32'h341:mepc = rs1_data;   
+                                    32'h305:mtvec = rs1_data | mtvec;
+                                    32'h300:mstatus = rs1_data | mstatus;
+                                    32'h342:mcause = rs1_data | mcause;
+                                    32'h341:mepc = rs1_data | mepc;   
                                 endcase
                                 ex_valid = 1'b1;
                                 next_state = IDLE;
