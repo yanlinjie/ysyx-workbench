@@ -152,45 +152,51 @@ always @(*) begin
         end
         WAIT_READY: begin
             ex_ready = 1'b0;
+            write_csr_en = 1'b0;
             if (ls_ready) next_state = IDLE;                    
             else next_state = WAIT_READY;
-
-            case (alu_ctr) //在这里写存储部分吧 目前主要csrrs csrrw : x[rd] = csrs[csr],ecall,mret, ebreak 放到下一时钟周期
-                
-                5'b10011:begin //csrrw
-                            case (imm)
-                                32'h305:mtvec = rs1_data | mtvec;
-                                32'h300:mstatus = rs1_data | mstatus;
-                                32'h342:mcause = rs1_data | mcause;
-                                32'h341:mepc = rs1_data | mepc;       
-                            endcase
-                        end
-                5'b10100:begin //csrrw
-                            case (imm)
-                                32'h305:mtvec = rs1_data;
-                                32'h300:mstatus = rs1_data;
-                                32'h342:mcause = rs1_data;
-                                32'h341:mepc = rs1_data;   
-                            endcase
-                        end
-                5'b10010: begin
-                            if (imm[0] == 1'b0) begin//ecall
-                                jump_flag = 1'b1;
-                                jump_pc = mtvec;
-                                mcause = 32'hffffffff;//这个由软件设置,目前设置的是-1
-                                mepc = pc + 4;// 相当于当前pc + 4 记录自陷的时候当前pc ，+4是为了防止一直陷入
-                            //   $display("next_pc ");
-                              $display("mepc = %h  mcause = %h mtvec = %h ", mepc ,mcause,mtvec);
-                            end else dpi_exit_simulation(); // ebreak
-                        end 
-                5'b10101:begin //mret
-                        jump_flag = 1'b1;
-                        jump_pc = mepc;
-                end
-                default: begin
-                end
-            endcase
-            if(condition_branch)begin//B type 指令
+            if (alu_ctr == 5'b10011 || alu_ctr == 5'b10100 || alu_ctr == 5'b10010 || alu_ctr == 5'b10101) begin
+                case (alu_ctr) //在这里写存储部分吧 目前主要csrrs csrrw : x[rd] = csrs[csr],ecall,mret, ebreak 放到下一时钟周期
+                    
+                    5'b10011:begin //csrrw
+                                case (imm)
+                                    32'h305:mtvec = rs1_data | mtvec;
+                                    32'h300:mstatus = rs1_data | mstatus;
+                                    32'h342:mcause = rs1_data | mcause;
+                                    32'h341:mepc = rs1_data | mepc;       
+                                endcase
+                                ex_valid = 1'b1;
+                            end
+                    5'b10100:begin //csrrw
+                                case (imm)
+                                    32'h305:mtvec = rs1_data;
+                                    32'h300:mstatus = rs1_data;
+                                    32'h342:mcause = rs1_data;
+                                    32'h341:mepc = rs1_data;   
+                                endcase
+                                ex_valid = 1'b1;
+                            end
+                    5'b10010: begin
+                                if (imm[0] == 1'b0) begin//ecall
+                                    jump_flag = 1'b1;
+                                    ex_valid = 1'b0;
+                                    jump_pc = mtvec;
+                                    mcause = 32'hffffffff;//这个由软件设置,目前设置的是-1
+                                    // mepc = pc + 4;// 相当于当前pc + 4 记录自陷的时候当前pc ，+4是为了防止一直陷入
+                                //   $display("next_pc ");
+                                $display("mepc = %h  mcause = %h mtvec = %h ", mepc ,mcause,mtvec);
+                                end else dpi_exit_simulation(); // ebreak
+                            end 
+                    5'b10101:begin //mret
+                            jump_flag = 1'b1;
+                            ex_valid = 1'b0;
+                            jump_pc = mepc + 4;
+                    end
+                    default: begin
+                    end
+                endcase
+            end
+            else if(condition_branch)begin//B type 指令
                 jump_flag = 1'b1;
                 jump_pc = current_pc + imm;
                 next_state = IDLE;
