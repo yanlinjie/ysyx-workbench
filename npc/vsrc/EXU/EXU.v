@@ -87,6 +87,11 @@ always @(posedge clk or posedge rst) begin
 end
 
 wire condition_branch;
+// reg[31:0] current_pc;
+// always @(posedge clk)
+// begin
+//     current_pc <=pc;
+// end
 // 状态机逻辑
 //jump_pc 可以直接在exu中计算，不管是B型指令，还是jal 还是jalr！
 //对于B型指令，则直接传送给IFU
@@ -166,6 +171,7 @@ always @(*) begin
                                     32'h341:mepc = rs1_data | mepc;       
                                 endcase
                                 ex_valid = 1'b1;
+                                next_state = IDLE;
                             end
                     5'b10100:begin //csrrw
                                 case (imm)
@@ -175,6 +181,7 @@ always @(*) begin
                                     32'h341:mepc = rs1_data;   
                                 endcase
                                 ex_valid = 1'b1;
+                                next_state = IDLE;
                             end
                     5'b10010: begin
                                 if (imm[0] == 1'b0) begin//ecall
@@ -182,15 +189,18 @@ always @(*) begin
                                     ex_valid = 1'b0;
                                     jump_pc = mtvec;
                                     mcause = 32'hffffffff;//这个由软件设置,目前设置的是-1
-                                    // mepc = pc + 4;// 相当于当前pc + 4 记录自陷的时候当前pc ，+4是为了防止一直陷入
-                                //   $display("next_pc ");
-                                $display("mepc = %h  mcause = %h mtvec = %h ", mepc ,mcause,mtvec);
+                                    mepc = current_pc + 4;// 相当于当前pc + 4 记录自陷的时候当前pc ，+4是为了防止一直陷入
+                                    next_state = IDLE;
+                                //   $display("pc = %h ", pc);
+                                $display("mepc = %h  mcause = %h mtvec = %h jump_pc = %h ", mepc ,mcause,mtvec, jump_pc);
                                 end else dpi_exit_simulation(); // ebreak
                             end 
                     5'b10101:begin //mret
                             jump_flag = 1'b1;
                             ex_valid = 1'b0;
-                            jump_pc = mepc + 4;
+                            jump_pc = mepc ;
+                            next_state = IDLE;
+                             $display("1111  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,jump_pc);
                     end
                     default: begin
                     end
