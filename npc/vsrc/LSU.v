@@ -63,6 +63,11 @@ localparam WAIT_READY = 2'b01;//等待下游模块 ready信号
 localparam WAIT_MEM_READY   = 2'b10;
 localparam WAIT_MEM_WRITE_READY   = 2'b11;
 reg [1:0] state, next_state;
+reg [31:0] mem_addr_index;
+reg [31:0] mem_data_index;
+wire  [7:0] one_byte;
+wire [15:0] half_word;
+reg [15:0] one_word;
 
 // 状态转移
 always @(posedge clk or posedge rst) begin
@@ -99,8 +104,8 @@ always @(*) begin
                         next_state = WAIT_MEM_WRITE_READY;    
                     end else begin
                         wvalid = 1'b1;
-                        ls_write_mem_addr = mem_addr>>2;
-                        ls_mem_data = rs2_data;
+                        ls_write_mem_addr = mem_addr>>2; //除去低两位，字节对齐
+                        ls_mem_data = mem_data_index;//数据索引 处理后的数据
                         next_state = WAIT_READY;
                     end
                 end 
@@ -150,16 +155,77 @@ always @(posedge clk) begin
         ls_start = (state == IDLE && ex_valid);
 end
 
+
+assign one_byte = rs2_data[7:0];//sb
+assign half_word = rs2_data[15:0];//sh
+wire [1:0] addr_index;
+assign addr_index = mem_addr[1:0];
 //后续可以优化直接在ID模块种译码出mask信号
 always @(*) begin
-    case (write_mem[1:0])//用两位即可,最高位用于表示 读出的数据 是符号拓展还是0拓展 读到的数据放到wbu中再处理吧
-        2'b00: wmask = 4'b0001; //1byte   //定义个mask//用于掩码 选择字节  
-        2'b01: wmask = 4'b0011; //2byte
-        2'b10: wmask = 4'b1111; //4byte
+    // if (read_mem_en) begin
+        
+    case (write_mem)//用两位即可,最高位用于表示 读出的数据 是符号拓展还是0拓展 读到的数据放到wbu中再处理吧
+        2'b00: begin
+            
+            case (addr_index)
+                2'b00:begin
+                    mem_data_index = {24'd0 , one_byte};
+                    wmask = 4'b0001;
+                end 
+                2'b01:begin
+                    mem_data_index = {16'd0, one_byte, 8'd0 } ;
+                    wmask = 4'b0010;
+                end 
+                2'b10:begin
+                    mem_data_index = {8'd0, one_byte, 16'd0 } ; 
+                    wmask = 4'b0100;
+                end 
+                2'b11:begin
+                    mem_data_index = {one_byte,24'd0 } ;
+                    wmask = 4'b1000;
+                end 
+                default:begin
+                    mem_data_index = 32'd0;
+                end
+            endcase
+        end
+
+        2'b01: begin //sh 满足 addr%2=0;
+            case (mem_addr[1:0])
+                2'b00:begin
+                    mem_data_index = {16'b0 , half_word};
+                    wmask = 4'b0011;
+                end 
+                2'b01:begin
+                    mem_data_index = { half_word,16'b0 } ;
+                    wmask = 4'b1100;
+                end 
+                default:begin
+                    mem_data_index = 32'b0;
+                end
+            endcase
+        end
+        //sw指令自带字节对齐  addr%4 =0;    
+        2'b10: begin
+            mem_data_index = rs2_data; //4byte
+            wmask = 4'b1111;
+        end
         default: begin
             wmask = 4'b1111;
         end
-endcase
+    endcase
+
+    // case (mem_addr[1:0])
+    //     2'b00:mem_data_index = rs2_data;
+    //     2'b01:mem_data_index = {24'b0, rs2_data[15:8] } ;
+    //     2'b10:mem_data_index = {24'b0, rs2_data[23:16]} ;   
+    //     2'b11:mem_data_index = {24'b0, rs2_data[31:24]} ;
+    //     default:begin
+    //         mem_data_index = rs2_data;
+    //     end
+    // endcase
+    // end
+
 end
 
 
@@ -169,9 +235,6 @@ end
 //wmask输出给存储器 write_mem输出给WBU 
 always @(*) begin
     if (ls_start) begin //读写是不是可以共用这个？ 感觉可以，待会儿试试
-
-
- 
         ls_write_reg = write_reg;
         ls_write_mem = write_mem;//写字节 
         ls_read_mem = read_mem;//读字节
@@ -180,11 +243,14 @@ always @(*) begin
         ls_rd_addr = rd_addr;
         ls_jump_next_pc = jump_next_pc;
         ls_jump = jump;
-
     end 
-
-
 end
+
+
+// always @(*)begin
+
+    
+// end
 
 
 endmodule

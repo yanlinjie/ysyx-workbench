@@ -97,8 +97,18 @@ end
 	
 	always @(posedge clk)begin
 		if(~rst && wen)
-		//  M[waddr] = (wdata & wmask_full) | M[waddr] & ~wmask_full;
+		begin
+		// 			//  M[waddr] = (wdata & wmask_full) | M[waddr] & ~wmask_full;
+		// $display("[Write] Time=%t Addr=0x%08x", $time, w_addr_i);
+		// $display("        Old Data = 0x%08x", memory[w_addr_i]);
+		// $display("        WData    = 0x%08x", w_data_i);
+		// $display("        WMask    = 0x%08x", wmask_full);
+		// $display("        New Data = 0x%08x", 
+		// (w_data_i & wmask_full) | (memory[w_addr_i] & ~wmask_full));
 			memory[w_addr_i] <= (w_data_i & wmask_full) | ( memory[w_addr_i] & ~wmask_full );
+			// $display("");
+		end
+
 	end
 
 endmodule
