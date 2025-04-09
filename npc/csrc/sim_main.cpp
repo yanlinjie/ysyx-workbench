@@ -359,10 +359,10 @@ int main(int argc, char** argv) {
         // exit(1);
     // }
     
-    if (++cycle_count > 100000) {
-      printf("[ERROR] Timeout: Too many cycles.\n");
-      break;
-    }
+    // if (++cycle_count > 100000) {
+    //   printf("[ERROR] Timeout: Too many cycles.\n");
+    //   break;
+    // }
   }
 
 }
