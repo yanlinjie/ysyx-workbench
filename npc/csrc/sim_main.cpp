@@ -74,7 +74,7 @@ extern "C" void monitor_mem_write(uint32_t addr, uint32_t data, uint32_t wtype) 
     if (oaddr == 0xa00003f8) 
     {
       // printf("[MEM WRITE] \n");
-      printf("%c", odata);//直接使用printf 打印出数据
+      printf("%c\n", odata);//直接使用printf 打印出数据
       // exit(0);
     }
 }
@@ -281,11 +281,11 @@ static void welcome() {
 
 int main(int argc, char** argv) {
 
-  FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
-  if (reg_dump == nullptr) {
-      perror("Failed to open regdump.txt");
-      exit(1);
-  }
+  // FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
+  // if (reg_dump == nullptr) {
+  //     perror("Failed to open regdump.txt");
+  //     exit(1);
+  // }
 
   // printf("[DEBUG] main() started\n");
   if (argc < 2) {
@@ -316,13 +316,13 @@ int main(int argc, char** argv) {
     // top->instruction = inst;
 
     // ring_buffer_push(pc, top->instruction_out);  // 👈 加入 ring buffer
-    fprintf(reg_dump, "\n========= Register File =========\n");
-    fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->pc,top->instruction);
-    for (int i = 0; i < 32; i++) {
-        fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->open_risc_v__DOT__REG_FILE__DOT__regs[i]);
-        if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
-    }
-    fprintf(reg_dump, "=================================\n\n");
+    // fprintf(reg_dump, "\n========= Register File =========\n");
+    // fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->pc,top->instruction);
+    // for (int i = 0; i < 32; i++) {
+    //     fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->open_risc_v__DOT__REG_FILE__DOT__regs[i]);
+    //     if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
+    // }
+    // fprintf(reg_dump, "=================================\n\n");
     single_cycle();
 
 
