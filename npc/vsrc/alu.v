@@ -84,7 +84,7 @@ module alu (
           next_pc = mtvec;
         //   $display("next_pc ");
 
-        //   $display("mepc = %h  mcause = %h mtvec = %h ", mepc ,mcause,mtvec);
+          $display("mepc = %h  mcause = %h mtvec = %h ", mepc ,mcause,mtvec);
         end else dpi_exit_simulation(); // ebreak
       end
 
