@@ -48,7 +48,7 @@ always @(*) begin
         arvalid   = ls_arvalid;
         rready = ls_rready;
     end else   begin
-        raddr = (pc>>2);
+        raddr = ((pc - 32'h80000000 )>>2);
         arvalid   = read_en;
         rready = if_rready;
     end
