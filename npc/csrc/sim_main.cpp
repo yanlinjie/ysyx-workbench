@@ -317,10 +317,10 @@ for (int i = 0; i < 32; i++) {
 }
 fprintf(reg_dump, "=================================\n\n");
   
-    // if (++cycle_count > 10000000) {
-    //   // printf("[ERROR] Timeout: Too many cycles.\n");
-    //   // break;
-    // }
+    if (++cycle_count > 10000000) {
+      printf("[ERROR] Timeout: Too many cycles.\n");
+      break;
+    }
   }
   tfp->close();
   delete top;

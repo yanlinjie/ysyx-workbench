@@ -23,7 +23,7 @@ always @(posedge clk) begin
     end
     else if(write_csr_en && target_reg != 5'h0 ) begin
             regs[target_reg] <= csr_data;
-            // $display("csr_data = %h   " ,csr_data);
+            $display("csr_data = %h   " ,csr_data);
     end
 end
 
