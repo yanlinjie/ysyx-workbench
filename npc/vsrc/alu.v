@@ -84,7 +84,8 @@ module alu (
           next_pc = mtvec;
         //   $display("next_pc ");
 
-          $display("mepc = %h  mcause = %h mtvec = %h ", mepc ,mcause,mtvec);
+          $display("0000  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,next_pc);
+
         end else dpi_exit_simulation(); // ebreak
       end
 
@@ -128,6 +129,8 @@ module alu (
         if (b[0] == 1'b0) begin
           mcause <= 32'hffffffff;
           mepc <= pc_current + 4;
+          $display("3333  mepc = %h  mcause = %h mtvec = %h jump_pc = %h pc_current = %h", mepc ,mcause,mtvec ,next_pc ,pc_current);
+
         end
       end
       default:begin
@@ -138,6 +141,7 @@ module alu (
     // ecall 和 mret 的统一时序处理
     ecall_branch <= ecall_pending;
     out_pc <= next_pc;
+    // $display("1111  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,next_pc);
   end
 
 endmodule
