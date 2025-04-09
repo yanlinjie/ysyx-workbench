@@ -2,8 +2,8 @@ module reg_file(
     input                               rst, clk, write_reg        ,
     input              [   4: 0]        rs1, rs2, target_reg       ,
     input              [  31: 0]        write_rd_data              ,
-    // input [31:0] csr_data,
-// input write_csr_en,
+    input [31:0] csr_data,
+input write_csr_en,
     output reg         [  31: 0]        read_rs1_data              ,
     output reg         [  31: 0]        read_rs2_data               
 );
@@ -21,8 +21,8 @@ always @(posedge clk) begin
         regs[target_reg] <= write_rd_data;
         // regs[target_reg] <= csr_data;
     end
-    // else if(write_csr_en && target_reg != 5'h0 )
-    // regs[target_reg] <= csr_data;
+    else if(write_csr_en && target_reg != 5'h0 )
+            regs[target_reg] <= csr_data;
 end
 
 initial begin

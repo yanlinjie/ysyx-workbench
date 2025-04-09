@@ -9,8 +9,9 @@ module LSU(
         output reg [31:0] ls_jump_next_pc,
 
         //from ex
+        // input  write_csr_en ,
+        // input  [31:0] csr_rd_data ,
         input [31:0] rs2_data,//用于存储
-        // input [31:0] imm,//用于jump
         input write_mem_en,
         input read_mem_en,
         input [1:0] write_mem,
@@ -55,6 +56,9 @@ module LSU(
 
         output reg ls_ready,
         output reg ls_valid
+
+        // output reg ls_write_csr_en ,
+        // output reg [31:0] ls_csr_rd_data 
 );
 
 // 状态定义
@@ -107,6 +111,7 @@ always @(*) begin
                         ls_write_mem_addr = mem_addr>>2; //除去低两位，字节对齐
                         ls_mem_data = mem_data_index;//数据索引 处理后的数据
                         next_state = WAIT_READY;
+                        // monitor_mem_write(mem_addr, mem_data_index, 0);  // 1 = word
                     end
                 end 
                     else next_state = WAIT_READY;
@@ -141,8 +146,10 @@ always @(*) begin
         end
         WAIT_MEM_WRITE_READY: begin
             if (wready) begin
-                next_state = WAIT_READY;
                 wvalid = 1'b1;
+                ls_write_mem_addr = mem_addr>>2; //除去低两位，字节对齐
+                ls_mem_data = mem_data_index;//数据索引 处理后的数据
+                next_state = WAIT_READY;
             end else next_state = WAIT_MEM_WRITE_READY;
         end
 
@@ -236,6 +243,8 @@ end
 //wmask输出给存储器 write_mem输出给WBU 
 always @(*) begin
     if (ls_start) begin //读写是不是可以共用这个？ 感觉可以，待会儿试试
+        // ls_write_csr_en = write_csr_en;
+        // ls_csr_rd_data = csr_rd_data;
         ls_write_reg = write_reg;
         ls_write_mem = write_mem;//写字节 
         ls_read_mem = read_mem;//读字节

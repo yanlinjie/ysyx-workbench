@@ -1,4 +1,3 @@
-import "DPI-C" function void dpi_exit_simulation();
 module IDU (
     input clk, 
     input rst, //高电平有效
@@ -377,31 +376,34 @@ end
                 end
                     // ebreak
                 7'b1110011:begin
-                    // write_reg = 0;
-                    // write_csr_reg = 0;
-                    // aluOut_WB_memOut = 0;
-                    // rs1Data_EX_PC = 0;
-                    // rs2Data_EX_imm32_4 = 2'b01;
-                    // write_mem = 2'b00;
-                    // read_mem = 3'b000;
-                    
-                    // pcImm_NEXTPC_rs1Imm = 2'b00;
-                    // extOP = 3'b000;
-                    dpi_exit_simulation();
+                    write_reg = 1'b0;              //1bit reg write en
+                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                    alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                    alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                    write_mem = 2'b11;              //2bit write mem ctr  
+                    write_mem_en = 1'b0;           //1bit write mem en
+                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                    read_mem_en = 1'b0;            //1bit read mem en
+                    // alu_ctr = 5'b00000;                //5bit control alu
+                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                    imm_ctr = 3'b000;              //3bit control imm;
+                    out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                    jump = 2'b00;       //jal :01  jalr: 10  default:00
+                    // dpi_exit_simulation();
                     case (func3)
                         3'b000:  begin  //ecall and ebreak
-                            // aluc = 5'b10011;
+                            alu_ctr = 5'b10010;
                             if (func7 ==7'b0011000 ) begin
-                                // aluc = 5'b10101;
+                                alu_ctr = 5'b10101;//mret
                             end
-                        end//dpi_exit_simulation(); // ebreak// 调用DPI-C函数，结束仿真
+                        end
                         3'b001:   begin//csrrw
                         // write_csr_reg = 1;
-                        //     aluc = 5'b10010;
+                            alu_ctr = 5'b10011;
                         end//csrrw
                         3'b010: begin //csrrs
                         // write_csr_reg = 1;
-                        //     aluc = 5'b10100;
+                            alu_ctr = 5'b10100;
                         end
 
                         default: begin
@@ -418,10 +420,9 @@ end
             endcase
         // end
     end
-// reg [31:0] imm_32;
-//不能使用if (state == IDLE && pc_valid),可能会因为前者imm_ctr还未执行完,导致这里使用default值！
+
 always @(*) begin
-    //  if (id_start) begin
+
 
         case (imm_ctr)
             3'b000:begin 
@@ -452,7 +453,7 @@ always @(*) begin
             end 
         endcase
         
-    //  end
+
 end
 
 

@@ -198,7 +198,8 @@ IDU u_IDU(
 // output declaration of module reg_file
 wire [31:0] read_rs1_data;
 wire [31:0] read_rs2_data;
-
+wire write_csr_en;
+wire [31:0] csr_rd_data;
 reg_file u_reg_file(
     .rst                               (rst                       ),
     .clk                               (clk                       ),
@@ -207,6 +208,8 @@ reg_file u_reg_file(
     .rs2                               (rs2_addr                  ),
     .target_reg                        (addr                      ),
     .write_rd_data                     (data                      ),
+    .csr_data                          (csr_rd_data               ),
+    .write_csr_en                      (write_csr_en              ),
 
     .read_rs1_data                     (read_rs1_data             ),
     .read_rs2_data                     (read_rs2_data             ) 
@@ -235,6 +238,8 @@ wire                   [  31:0]         jump_pc                    ;
 wire                   [  31:0]         ex_jump_next_pc            ;
 wire                   [   1:0]         ex_jump                    ;
 wire                   [  31:0]         ex_rs2_data                ;
+wire ecall_pending;
+
 EXU u_EXU(
     .clk                               (clk                       ),
     .rst                               (rst                       ),
@@ -279,7 +284,10 @@ EXU u_EXU(
 
     .jump_next_pc                      (ex_jump_next_pc           ),
     .ex_valid                          (ex_valid                  ),
-    .ex_ready                          (ex_ready                  ) 
+    .ex_ready                          (ex_ready                  ),
+    .ecall_pending                     (ecall_pending             ),//未使用
+    .write_csr_en                      (write_csr_en              ),
+    .csr_rd_data                       (csr_rd_data               ) 
 );
 
 

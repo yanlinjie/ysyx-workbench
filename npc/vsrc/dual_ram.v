@@ -1,4 +1,5 @@
 
+import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
 module dual_ram_template #(
 	parameter DW = 32,
 	parameter AW = 32,
@@ -106,7 +107,7 @@ end
 		// $display("        New Data = 0x%08x", 
 		// (w_data_i & wmask_full) | (memory[w_addr_i] & ~wmask_full));
 			memory[w_addr_i] <= (w_data_i & wmask_full) | ( memory[w_addr_i] & ~wmask_full );
-			// $display("");
+			monitor_mem_write(w_addr_i, w_data_i, 0);  // 1 = word
 		end
 
 	end
