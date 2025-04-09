@@ -127,6 +127,8 @@ always @(*) begin
                                 csr_rd_data = mepc;
                             end     
                         endcase
+                        // $display("6666 imm = %h  csr_rd_data = %h  mtvec = %h pc = %h ", imm ,csr_rd_data , mtvec ,pc);
+
                      end
                      5'b10100:begin //csrrw
                         case (imm)
@@ -147,6 +149,8 @@ always @(*) begin
                                 csr_rd_data = mepc;
                             end     
                         endcase
+                        // $display("5555 imm = %h  csr_rd_data = %h  mtvec = %h mstatus = %h mcause = %h mepc = %h pc = %h ", imm ,csr_rd_data , mtvec , mstatus, mcause, mepc ,pc);
+
                      end
                     default: begin
                     end
@@ -192,7 +196,7 @@ always @(*) begin
                                     mepc = current_pc + 4;// 相当于当前pc + 4 记录自陷的时候当前pc ，+4是为了防止一直陷入
                                     next_state = IDLE;
                                 //   $display("pc = %h ", pc);
-                                $display("mepc = %h  mcause = %h mtvec = %h jump_pc = %h ", mepc ,mcause,mtvec, jump_pc );
+                                $display("ecall mepc = %h  mcause = %h mtvec = %h jump_pc = %h current_pc = %h", mepc ,mcause,mtvec, jump_pc ,current_pc);
                                 end else dpi_exit_simulation(); // ebreak
                             end 
                     5'b10101:begin //mret
@@ -200,7 +204,7 @@ always @(*) begin
                             ex_valid = 1'b0;
                             jump_pc = mepc ;
                             next_state = IDLE;
-                             $display("1111  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,jump_pc);
+                             $display("mret  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,jump_pc);
                     end
                     default: begin
                     end
