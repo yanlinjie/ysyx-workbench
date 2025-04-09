@@ -25,7 +25,7 @@ always @(posedge clk) begin
         begin 
             
             regs[target_reg] <= csr_data;
-            $display("csr_data = %h  target_reg = %h " ,csr_data , target_reg);
+            // $display("csr_data = %h  target_reg = %h " ,csr_data , target_reg);
 end
 end
 initial begin

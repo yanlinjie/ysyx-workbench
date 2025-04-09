@@ -84,7 +84,7 @@ module alu (
           next_pc = mtvec;
         //   $display("next_pc ");
 
-          $display("0000  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,next_pc);
+          // $display("0000  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,next_pc);
 
         end else dpi_exit_simulation(); // ebreak
       end
@@ -93,7 +93,7 @@ module alu (
       5'b10101: begin
         ecall_pending = 1'b1;
         next_pc = mepc;
-        $display("1111  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,next_pc);
+        // $display("1111  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,next_pc);
 
       end
             default:begin
@@ -129,7 +129,7 @@ module alu (
         if (b[0] == 1'b0) begin
           mcause <= 32'hffffffff;
           mepc <= pc_current + 4;
-          $display("3333  mepc = %h  mcause = %h mtvec = %h jump_pc = %h pc_current = %h", mepc ,mcause,mtvec ,next_pc ,pc_current);
+          // $display("3333  mepc = %h  mcause = %h mtvec = %h jump_pc = %h pc_current = %h", mepc ,mcause,mtvec ,next_pc ,pc_current);
 
         end
       end

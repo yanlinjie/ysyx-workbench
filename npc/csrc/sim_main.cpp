@@ -74,7 +74,7 @@ extern "C" void monitor_mem_write(uint32_t addr, uint32_t data, uint32_t wtype) 
     if (oaddr == 0xa00003f8) 
     {
       // printf("[MEM WRITE] \n");
-      printf("%c\n", odata);//直接使用printf 打印出数据
+      printf("%c", odata);//直接使用printf 打印出数据
       // exit(0);
     }
 }
