@@ -180,7 +180,7 @@ always @(*) begin
                                 mcause = 32'hffffffff;//这个由软件设置,目前设置的是-1
                                 mepc = pc + 4;// 相当于当前pc + 4 记录自陷的时候当前pc ，+4是为了防止一直陷入
                             //   $display("next_pc ");
-                            //   $display("mepc = %h  mcause = %h mtvec = %h ", mepc ,mcause,mtvec);
+                              $display("mepc = %h  mcause = %h mtvec = %h ", mepc ,mcause,mtvec);
                             end else dpi_exit_simulation(); // ebreak
                         end 
                 5'b10101:begin //mret
