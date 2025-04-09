@@ -54,33 +54,53 @@ always @(*) begin
     end
 end
 
-//write
-reg [31:0] wdata_1;
+//read
+reg [31:0] wb_rddata_1;
+reg [7:0] read_one_byte;
+reg [15:0] read_half_word;
+wire [1:0] read_index;
+assign  read_index= ls_read_mem_addr[1:0];
 always @(*) begin
-    case(ls_read_mem_addr[1:0])
-        2'b00:wdata_1 = rdata;
-        2'b01:wdata_1 = {24'b0, rdata[15:8] } ;
-        2'b10:wdata_1 = {24'b0, rdata[23:16]} ;   
-        2'b11:wdata_1 = {24'b0, rdata[31:24]} ;
-        // 2'b10:wb_rddata_1 = rdata[23:16];
-        // 2'b11:wb_rddata_1 = rdata[31:24];
-
+    case (ls_read_mem[1:0])
+        2'b00: begin //one_byte lb
+                case(read_index)
+                     2'b00: read_one_byte = rdata[7:0];
+                     2'b01: read_one_byte = rdata[15:8];
+                     2'b10: read_one_byte = rdata[23:16];
+                     2'b11: read_one_byte = rdata[31:24];
+                    default: read_one_byte = 8'b0;
+            endcase
+                    wb_rddata_1 ={ 24'd0 ,read_one_byte};//lb读取一字节后，再给wbu处理，写的有点冗余。
+        end
+        2'b01: begin //one_byte lh
+                case(read_index)
+                     2'b00: read_half_word = rdata[15:0];
+                     2'b10: read_half_word = rdata[31:16];
+                    default: read_half_word = 16'b0;
+            endcase
+                    wb_rddata_1 ={ 16'd0 ,read_half_word};//lb读取一字节后，再给wbu处理，写的有点冗余。
+        end
+        2'b10: wb_rddata_1 = rdata; 
+        default: begin
+            wb_rddata_1 = rdata;
+        end
     endcase
+
 end
 
 //read 会存在不能被4整除的情况
-reg [31:0] wb_rddata_1;
-always @(*) begin
-    case(ls_read_mem_addr[1:0])
-        2'b00:wb_rddata_1 = rdata;
-        2'b01:wb_rddata_1 = {24'b0, rdata[15:8] } ;
-        2'b10:wb_rddata_1 = {24'b0, rdata[23:16]} ;   
-        2'b11:wb_rddata_1 = {24'b0, rdata[31:24]} ;
-        // 2'b10:wb_rddata_1 = rdata[23:16];
-        // 2'b11:wb_rddata_1 = rdata[31:24];
+// reg [31:0] wb_rddata_1;
+// always @(*) begin
+//     case(ls_read_mem_addr[1:0])
+//         2'b00:wb_rddata_1 = rdata;
+//         2'b01:wb_rddata_1 = {24'b0, rdata[15:8] } ;
+//         2'b10:wb_rddata_1 = {24'b0, rdata[23:16]} ;   
+//         2'b11:wb_rddata_1 = {24'b0, rdata[31:24]} ;
+//         // 2'b10:wb_rddata_1 = rdata[23:16];
+//         // 2'b11:wb_rddata_1 = rdata[31:24];
 
-    endcase
-end
+//     endcase
+// end
 
 wire [31:0]  wb_rddata;//to wbu
 assign next_inst = rvalid? rdata : inst;//

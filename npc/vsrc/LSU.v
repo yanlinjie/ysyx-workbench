@@ -134,8 +134,9 @@ always @(*) begin
         end
         WAIT_MEM_READY: begin
             if (arready) begin
-                next_state = WAIT_READY;
+                next_state = WAIT_READY;//执行模块ready后，跳转至wait_input状态
                 arvalid = 1'b1;//en
+                ls_read_mem_addr = mem_addr;
             end else next_state = WAIT_MEM_READY;
         end
         WAIT_MEM_WRITE_READY: begin
@@ -196,7 +197,7 @@ always @(*) begin
                     mem_data_index = {16'b0 , half_word};
                     wmask = 4'b0011;
                 end 
-                2'b01:begin
+                2'b10:begin
                     mem_data_index = { half_word,16'b0 } ;
                     wmask = 4'b1100;
                 end 
