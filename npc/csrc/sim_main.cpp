@@ -317,7 +317,7 @@ for (int i = 0; i < 32; i++) {
 }
 fprintf(reg_dump, "=================================\n\n");
   
-    if (++cycle_count > 1000000) {
+    if (++cycle_count > 500000) {
       printf("[ERROR] Timeout: Too many cycles.\n");
       break;
     }
