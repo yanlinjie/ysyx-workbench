@@ -92,6 +92,8 @@ module alu (
       5'b10101: begin
         ecall_pending = 1'b1;
         next_pc = mepc;
+        $display("1111  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,next_pc);
+
       end
             default:begin
         
