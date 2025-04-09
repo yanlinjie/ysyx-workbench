@@ -287,16 +287,16 @@ static void welcome() {
 
 int main(int argc, char** argv) {
 
-  // FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
-  // if (reg_dump == nullptr) {
-  //     perror("Failed to open regdump.txt");
-  //     exit(1);
-  // }
-  // Verilated::traceEverOn(true);
-  // // VerilatedVcdC *tfp = new VerilatedVcdC;
-  // tfp = new VerilatedVcdC;
-  // top->trace(tfp, 99);      // 99 是层级深度
-  // tfp->open("wave.vcd");    // 波形文件名
+  FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
+  if (reg_dump == nullptr) {
+      perror("Failed to open regdump.txt");
+      exit(1);
+  }
+  Verilated::traceEverOn(true);
+  // VerilatedVcdC *tfp = new VerilatedVcdC;
+  tfp = new VerilatedVcdC;
+  top->trace(tfp, 99);      // 99 是层级深度
+  tfp->open("wave.vcd");    // 波形文件名
   welcome();
   load_bin_to_inst_mem(argv[1]);  // 在 reset 之后，仿真主循环之前
 
@@ -309,22 +309,22 @@ int main(int argc, char** argv) {
 
     single_cycle();
     
-// fprintf(reg_dump, "\n========= Register File =========\n");
-// fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->rootp->top__DOT__u_riscv32__DOT__pc,top->rootp->top__DOT__u_riscv32__DOT__inst);
-// for (int i = 0; i < 32; i++) {
-//     fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i]);
-//     if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
-// }
-// fprintf(reg_dump, "=================================\n\n");
+fprintf(reg_dump, "\n========= Register File =========\n");
+fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->rootp->top__DOT__u_riscv32__DOT__pc,top->rootp->top__DOT__u_riscv32__DOT__inst);
+for (int i = 0; i < 32; i++) {
+    fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i]);
+    if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
+}
+fprintf(reg_dump, "=================================\n\n");
   
-    // if (++cycle_count > 10000) {
-    //   printf("[ERROR] Timeout: Too many cycles.\n");
-    //   break;
-    // }
+    if (++cycle_count > 1000000) {
+      printf("[ERROR] Timeout: Too many cycles.\n");
+      break;
+    }
   }
-  // tfp->close();
-  // delete top;
-  // delete tfp;
-  // return -1;
+  tfp->close();
+  delete top;
+  delete tfp;
+  return -1;
 
 }
