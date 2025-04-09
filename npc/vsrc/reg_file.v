@@ -22,9 +22,12 @@ always @(posedge clk) begin
         // regs[target_reg] <= csr_data;
     end
     else if(write_csr_en && target_reg != 5'h0 )
-    regs[target_reg] <= csr_data;
+        begin 
+            
+            regs[target_reg] <= csr_data;
+            $display("csr_data = %h  target_reg = %h " ,csr_data , target_reg);
 end
-
+end
 initial begin
     // regs[5'd2] = 32'd128;
     regs[5'd2] = 32'd0;
