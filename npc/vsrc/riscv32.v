@@ -39,7 +39,7 @@ wire                   [  31:0]         pc                         ;
 wire                                    read_en                    ;
 wire                   [  31:0]         next_inst                  ;
 
-
+wire [4:0] csr_rd_addr;
 
 always @(*) begin
     arvalid   = 1'b0;
@@ -208,6 +208,7 @@ reg_file u_reg_file(
     .rs2                               (rs2_addr                  ),
     .target_reg                        (addr                      ),
     .write_rd_data                     (data                      ),
+    .reg_csr_rd_addr(csr_rd_addr),
     .csr_data                          (csr_rd_data               ),
     .write_csr_en                      (write_csr_en              ),
 
@@ -287,7 +288,8 @@ EXU u_EXU(
     .ex_ready                          (ex_ready                  ),
     .ecall_pending                     (ecall_pending             ),//未使用
     .write_csr_en                      (write_csr_en              ),
-    .csr_rd_data                       (csr_rd_data               ) 
+    .csr_rd_data                       (csr_rd_data               ) ,
+    .csr_rd_addr(csr_rd_addr)
 );
 
 

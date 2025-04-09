@@ -2,6 +2,7 @@ module reg_file(
     input                               rst, clk, write_reg        ,
     input              [   4: 0]        rs1, rs2, target_reg       ,
     input              [  31: 0]        write_rd_data              ,
+    input [4:0] reg_csr_rd_addr,
     input [31:0] csr_data,
 input write_csr_en,
     output reg         [  31: 0]        read_rs1_data              ,
@@ -21,9 +22,9 @@ always @(posedge clk) begin
         regs[target_reg] <= write_rd_data;
         // regs[target_reg] <= csr_data;
     end
-    else if(write_csr_en && target_reg != 5'h0 ) begin
-            regs[target_reg] <= csr_data;
-            $display("csr_data = %h   " ,csr_data);
+    else if(write_csr_en && reg_csr_rd_addr != 5'h0 ) begin
+            regs[reg_csr_rd_addr] <= csr_data;
+            // $display("csr_data = %h  target_reg = %h" ,csr_data ,target_reg);
     end
 end
 

@@ -55,7 +55,8 @@ module EXU(
     output reg ecall_pending,
     //csrrw csrrs写回寄存器 传送到wbu模块进行写回，
     output reg write_csr_en ,
-    output reg [31:0] csr_rd_data 
+    output reg [31:0] csr_rd_data ,
+    output reg [4:0] csr_rd_addr
 
     
 );
@@ -113,18 +114,22 @@ always @(*) begin
                             32'h305:begin
                                 write_csr_en = 1'b1;
                                 csr_rd_data = mtvec;
+                                csr_rd_addr = rd_addr;
                             end 
                             32'h300:begin
                                 write_csr_en = 1'b1;
                                 csr_rd_data = mstatus;
+                                csr_rd_addr = rd_addr;
                             end 
                             32'h342:begin
                                 write_csr_en = 1'b1;
                                 csr_rd_data = mcause;
+                                csr_rd_addr = rd_addr;
                             end 
                             32'h341:begin
                                 write_csr_en = 1'b1;
                                 csr_rd_data = mepc;
+                                csr_rd_addr = rd_addr;
                             end     
                         endcase
                         // $display("6666 imm = %h  csr_rd_data = %h  mtvec = %h pc = %h ", imm ,csr_rd_data , mtvec ,pc);
@@ -135,18 +140,22 @@ always @(*) begin
                             32'h305:begin
                                 write_csr_en = 1'b1;
                                 csr_rd_data = mtvec;
+                                csr_rd_addr = rd_addr;
                             end 
                             32'h300:begin
                                 write_csr_en = 1'b1;
                                 csr_rd_data = mstatus;
+                                csr_rd_addr = rd_addr;
                             end 
                             32'h342:begin
                                 write_csr_en = 1'b1;
                                 csr_rd_data = mcause;
+                                csr_rd_addr = rd_addr;
                             end 
                             32'h341:begin
                                 write_csr_en = 1'b1;
                                 csr_rd_data = mepc;
+                                csr_rd_addr = rd_addr;
                             end     
                         endcase
                         // $display("5555 imm = %h  csr_rd_data = %h  mtvec = %h mstatus = %h mcause = %h mepc = %h pc = %h ", imm ,csr_rd_data , mtvec , mstatus, mcause, mepc ,pc);
@@ -196,7 +205,7 @@ always @(*) begin
                                     mepc = current_pc + 4;// 相当于当前pc + 4 记录自陷的时候当前pc ，+4是为了防止一直陷入
                                     next_state = IDLE;
                                 //   $display("pc = %h ", pc);
-                                $display("ecall mepc = %h  mcause = %h mtvec = %h jump_pc = %h current_pc = %h", mepc ,mcause,mtvec, jump_pc ,current_pc);
+                                // $display("ecall mepc = %h  mcause = %h mtvec = %h jump_pc = %h current_pc = %h", mepc ,mcause,mtvec, jump_pc ,current_pc);
                                 end else dpi_exit_simulation(); // ebreak
                             end 
                     5'b10101:begin //mret
@@ -204,7 +213,7 @@ always @(*) begin
                             ex_valid = 1'b0;
                             jump_pc = mepc ;
                             next_state = IDLE;
-                             $display("mret  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,jump_pc);
+                            //  $display("mret  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,jump_pc);
                     end
                     default: begin
                     end
