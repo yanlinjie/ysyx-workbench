@@ -68,7 +68,7 @@ extern "C" void monitor_mem_read(uint32_t addr, uint32_t data) {
 
 extern "C" void monitor_mem_write(uint32_t addr, uint32_t data, uint32_t wtype) {
     const char* type_str = (wtype == 1) ? "WORD" : (wtype == 2) ? "HALF" : "BYTE";
-    printf("[MEM WRITE] PC = 0x%08x, type = %s, address = 0x%08x, data = 0x%08x\n",top->pc , type_str, addr, data);
+    // printf("[MEM WRITE] PC = 0x%08x, type = %s, address = 0x%08x, data = 0x%08x\n",top->pc , type_str, addr, data);
     uint32_t oaddr = addr;
     uint32_t odata = data;
     if (oaddr == 0xa00003f8) 
@@ -236,7 +236,7 @@ void load_bin_to_inst_mem(const char* bin_file_path) {
 
       // 写入 instruction_mem 的 rom_mem
       top->rootp->open_risc_v__DOT__INSTRUCTION_MEM__DOT__rom_mem[idx] = inst;
-      // printf("inst = %08x; addr = %08x ; idx = %d\n",inst , cnt ,idx);
+      printf("inst = %08x; addr = %08x ; idx = %d\n",inst , cnt ,idx);
       idx++;
       
       cnt = cnt +4;
