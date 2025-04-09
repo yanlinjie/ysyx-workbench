@@ -61,8 +61,8 @@ extern "C" int pmem_read(uint32_t raddr) {
   // 总是读取地址为`raddr & ~0x3u`的4字节并返回
   uint64_t us = get_time();
   // printf("Start time: %lu us\n", us);
-  if (raddr == 0x2800012)    return (uint32_t)us;//{ 返回当前时间 };
-  else if(raddr == 0x2800013 ) return us >> 32;
+  if (raddr == 0x28000012)    return (uint32_t)us;//{ 返回当前时间 };
+  else if(raddr == 0x28000013 ) return us >> 32;
   return 0;
 }
 
@@ -317,7 +317,7 @@ int main(int argc, char** argv) {
 // }
 // fprintf(reg_dump, "=================================\n\n");
   
-    // if (++cycle_count > 10000000) {
+    // if (++cycle_count > 10000) {
     //   printf("[ERROR] Timeout: Too many cycles.\n");
     //   break;
     // }

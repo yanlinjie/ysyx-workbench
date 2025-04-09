@@ -69,8 +69,8 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;
-			if(r_addr == 32'h2800012) r_data_o = pmem_read (r_addr);
-			else if(r_addr == 32'h2800013) r_data_o = pmem_read (r_addr);
+			if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
+			else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
 			else r_data_o = memory[r_addr];
 			rvalid =1'b1;
 			next_state = READ_IDLE;
