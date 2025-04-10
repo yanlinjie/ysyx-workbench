@@ -209,7 +209,7 @@ always @(*) begin
                                     mepc = current_pc + 4;// 相当于当前pc + 4 记录自陷的时候当前pc ，+4是为了防止一直陷入
                                     next_state = IDLE;
                                 //   $display("pc = %h ", pc);
-                                $display("ecall mepc = %h  mcause = %h mtvec = %h jump_pc = %h current_pc = %h", mepc ,mcause,mtvec, jump_pc ,current_pc);
+                                // $display("ecall mepc = %h  mcause = %h mtvec = %h jump_pc = %h current_pc = %h", mepc ,mcause,mtvec, jump_pc ,current_pc);
                                 end else dpi_exit_simulation(); // ebreak
                             end 
                     5'b10101:begin //mret
@@ -217,7 +217,7 @@ always @(*) begin
                             ex_valid = 1'b0;
                             jump_pc = mepc ;
                             next_state = IDLE;
-                             $display("mret  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,jump_pc);
+                            //  $display("mret  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,jump_pc);
                     end
                     default: begin
                     end

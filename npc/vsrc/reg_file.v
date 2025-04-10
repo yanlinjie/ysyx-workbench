@@ -24,7 +24,7 @@ always @(posedge clk) begin
     end
     else if(write_csr_en && reg_csr_rd_addr != 5'h0 ) begin
             regs[reg_csr_rd_addr] <= csr_data;
-            $display("csr_data = %h  target_reg = %h" ,csr_data ,reg_csr_rd_addr);
+            // $display("csr_data = %h  target_reg = %h" ,csr_data ,reg_csr_rd_addr);
     end
 end
 

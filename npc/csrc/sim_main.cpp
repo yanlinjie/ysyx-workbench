@@ -30,6 +30,7 @@ extern "C" {
 // VerilatedVcdC *tfp = nullptr;   // 2. 声明全局 tfp
 vluint64_t main_time = 0;       // 3. 声明主时间变量
 double sc_time_stamp() { return main_time; }
+FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
 
 Vtop* top = new Vtop();
 VerilatedVcdC* tfp = new VerilatedVcdC();  // VCD 波形对象
@@ -72,8 +73,8 @@ extern "C" void monitor_mem_read(uint32_t addr, uint32_t data) {
 }
 
 extern "C" void monitor_mem_write(uint32_t addr, uint32_t data, uint32_t wtype) {
-    // const char* type_str = (wtype == 1) ? "WORD" : (wtype == 2) ? "HALF" : "BYTE";
-    // printf("[MEM WRITE] PC = 0x%08x, type = %s, address = 0x%08x, data = 0x%08x\n",top->rootp->top__DOT__u_riscv32__DOT__pc , type_str, addr, data);
+    const char* type_str = (wtype == 1) ? "WORD" : (wtype == 2) ? "HALF" : "BYTE";
+    fprintf(reg_dump,"[MEM WRITE] PC = 0x%08x, type = %s, address = 0x%08x, data = 0x%08x\n",top->rootp->top__DOT__u_riscv32__DOT__pc , type_str, addr, data);
     uint32_t oaddr = addr;
     uint32_t odata = data;
     if (oaddr == (0xa00003f8/4)) 
@@ -289,11 +290,10 @@ static void welcome() {
 
 int main(int argc, char** argv) {
 
-  FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
-  if (reg_dump == nullptr) {
-      perror("Failed to open regdump.txt");
-      exit(1);
-  }
+  // if (reg_dump == nullptr) {
+  //     perror("Failed to open regdump.txt");
+  //     exit(1);
+  // }
   // Verilated::traceEverOn(true);
   // // VerilatedVcdC *tfp = new VerilatedVcdC;
   // tfp = new VerilatedVcdC;
@@ -303,42 +303,51 @@ int main(int argc, char** argv) {
   load_bin_to_inst_mem(argv[1]);  // 在 reset 之后，仿真主循环之前
 
   rst(10);
+
+  cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
+  for (int i = 0; i < 32; ++i)
+    cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
+
   uint32_t prev_inst = 0;  // 初始化为0或其他非法指令
-  // printf("prev_inst= %08x = 0x%08x  ", prev_inst, top->rootp->top__DOT__u_riscv32__DOT__inst);
-// 在仿真循环中：
-
-
   cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
 
   for (int i = 0; i < 32; ++i)
     cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
 
+  // long program_size = load_program(argv[1]);
+// init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
   int cycle_count = 0;
   while (true) {
 
 
     single_cycle();
-    if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst) {
-      printf("Instruction changed: 0x%08x -> 0x%08x\n", prev_inst, top->rootp->top__DOT__u_riscv32__DOT__inst);
-      
-      for (int i = 0; i < 32; i++) {
-          printf("x%-2d = 0x%08x  ", i, top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i]);
-          if ((i + 1) % 4 == 0) printf("\n");
-      }
-  }
-  
   // 更新上一个指令
-if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
+// if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
+//     ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__pc, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
 
-fprintf(reg_dump, "\n========= Register File =========\n");
-fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->rootp->top__DOT__u_riscv32__DOT__pc,top->rootp->top__DOT__u_riscv32__DOT__inst);
-for (int i = 0; i < 32; i++) {
-    fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i]);
-    if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
-}
+// //debug diff
+//     cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
+//     for (int i = 0; i < 32; ++i)
+//       cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
+//     difftest_regcpy(&ref, DIFFTEST_TO_DUT);
+//     //ref 是正确端 dut是
+//     if (!isa_difftest_checkregs(&ref, &cpu)) {
+//       ring_buffer_print();  // 👈 打印 ring buffer
+//       // printf("cycle_count = %d\n", cycle_count);
+//       exit(1);
+//     }
+//     difftest_exec(1);
 
-fprintf(reg_dump, "=================================\n\n");
-}
+// // fprintf(reg_dump, "\n========= Register File =========\n");
+// // fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->rootp->top__DOT__u_riscv32__DOT__pc,top->rootp->top__DOT__u_riscv32__DOT__inst);
+// // for (int i = 0; i < 32; i++) {
+// //     fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i]);
+// //     if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
+// // }
+
+// // fprintf(reg_dump, "=================================\n\n");
+// }
+
 prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
 
     // if (++cycle_count > 500000) {
