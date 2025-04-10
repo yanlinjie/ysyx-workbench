@@ -156,8 +156,10 @@ bool isa_difftest_checkregs(CPU_state *ref_r, CPU_state *dut) {
 }
 
 static void single_cycle() {
-  top->clk = 1; top->eval();tfp->dump(main_time++);
-  top->clk = 0; top->eval();tfp->dump(main_time++);
+  top->clk = 1; top->eval();
+  // tfp->dump(main_time++);
+  top->clk = 0; top->eval();
+  // tfp->dump(main_time++);
 
 }
 
@@ -292,39 +294,61 @@ int main(int argc, char** argv) {
       perror("Failed to open regdump.txt");
       exit(1);
   }
-  Verilated::traceEverOn(true);
-  // VerilatedVcdC *tfp = new VerilatedVcdC;
-  tfp = new VerilatedVcdC;
-  top->trace(tfp, 99);      // 99 是层级深度
-  tfp->open("wave.vcd");    // 波形文件名
+  // Verilated::traceEverOn(true);
+  // // VerilatedVcdC *tfp = new VerilatedVcdC;
+  // tfp = new VerilatedVcdC;
+  // top->trace(tfp, 99);      // 99 是层级深度
+  // tfp->open("wave.vcd");    // 波形文件名
   welcome();
   load_bin_to_inst_mem(argv[1]);  // 在 reset 之后，仿真主循环之前
 
   rst(10);
+  uint32_t prev_inst = 0;  // 初始化为0或其他非法指令
+  // printf("prev_inst= %08x = 0x%08x  ", prev_inst, top->rootp->top__DOT__u_riscv32__DOT__inst);
+// 在仿真循环中：
 
+
+  cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
+
+  for (int i = 0; i < 32; ++i)
+    cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
 
   int cycle_count = 0;
   while (true) {
 
 
     single_cycle();
-    
+    if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst) {
+      printf("Instruction changed: 0x%08x -> 0x%08x\n", prev_inst, top->rootp->top__DOT__u_riscv32__DOT__inst);
+      
+      for (int i = 0; i < 32; i++) {
+          printf("x%-2d = 0x%08x  ", i, top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i]);
+          if ((i + 1) % 4 == 0) printf("\n");
+      }
+  }
+  
+  // 更新上一个指令
+if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
+
 fprintf(reg_dump, "\n========= Register File =========\n");
 fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->rootp->top__DOT__u_riscv32__DOT__pc,top->rootp->top__DOT__u_riscv32__DOT__inst);
 for (int i = 0; i < 32; i++) {
     fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i]);
     if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
 }
+
 fprintf(reg_dump, "=================================\n\n");
-  
+}
+prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
+
     // if (++cycle_count > 500000) {
     //   printf("[ERROR] Timeout: Too many cycles.\n");
     //   break;
     // }
   }
-  tfp->close();
-  delete top;
-  delete tfp;
-  return -1;
+  // tfp->close();
+  // delete top;
+  // delete tfp;
+  // return -1;
 
 }
