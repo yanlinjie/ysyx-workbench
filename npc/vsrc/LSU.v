@@ -42,6 +42,7 @@ module LSU(
         //mem_write_bus
         input wready,
         output reg wvalid,
+        output       reg                       awvalid                    ,
 
 
 
@@ -108,6 +109,7 @@ always @(*) begin
                         next_state = WAIT_MEM_WRITE_READY;    
                     end else begin
                         wvalid = 1'b1;
+                        awvalid = 1'b1;
                         ls_write_mem_addr = mem_addr>>2; //除去低两位，字节对齐
                         ls_mem_data = mem_data_index;//数据索引 处理后的数据
                         next_state = WAIT_READY;
@@ -121,6 +123,7 @@ always @(*) begin
         WAIT_READY: begin
             rready = 1'b0;
             wvalid = 1'b0;
+            awvalid = 1'b0;
             arvalid = 1'b0;
             ls_ready = 1'b0;
             if (read_mem_falg ) begin
@@ -147,6 +150,7 @@ always @(*) begin
         WAIT_MEM_WRITE_READY: begin
             if (wready) begin
                 wvalid = 1'b1;
+                awvalid = 1'b1;
                 ls_write_mem_addr = mem_addr>>2; //除去低两位，字节对齐
                 ls_mem_data = mem_data_index;//数据索引 处理后的数据
                 next_state = WAIT_READY;

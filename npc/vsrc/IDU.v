@@ -1,35 +1,35 @@
 module IDU (
-    input clk, 
-    input rst, //高电平有效
+    input                               clk                        ,
+    input                               rst                        ,//高电平有效
 
-    input [31:0] pc,//当前执行的pc
-    input [31:0] instruction,//当前执行的指令
+    input              [  31:0]         pc                         ,//当前执行的pc
+    input              [  31:0]         instruction                ,//当前执行的指令
 
-    input pc_valid,//握手信号
-    input ex_ready,//握手信号
-    output reg id_ready, //握手信号
-    output reg id_valid,//握手信号
+    input                               pc_valid                   ,//握手信号
+    input                               ex_ready                   ,//握手信号
+    output reg                          id_ready                   ,//握手信号
+    output reg                          id_valid                   ,//握手信号
 
 
-    output reg write_reg ,//1bit reg write en
-    output reg rd_aluout_mem ,// 1bit: rd from alu or mem. 0:from alu, 1:from mem 
-    output reg [1:0] alua_rs1_pc_zero,  //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-    output reg [1:0] alub_rs2_imm_4,    //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-    output reg [4:0] alu_ctr,           //5bit control alu
-    output reg [31:0] imm_32,           //output  32bit imm
+    output reg                          write_reg                  ,//1bit reg write en
+    output reg                          rd_aluout_mem              ,// 1bit: rd from alu or mem. 0:from alu, 1:from mem 
+    output reg         [   1:0]         alua_rs1_pc_zero           ,//2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+    output reg         [   1:0]         alub_rs2_imm_4             ,//2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+    output reg         [   4:0]         alu_ctr                    ,//5bit control alu
+    output reg         [  31:0]         imm_32                     ,//output  32bit imm
     
-    output reg write_mem_en,            //1bit write mem en  
-    output reg [1:0] write_mem,         //2bit write mem ctr
-    output reg read_mem_en ,            //1bit read mem en
-    output reg [2:0] read_mem,          //3bit read mem ctr
-    output reg next_pcimm_rs1imm,       // 1bit 0:pc += imm ; pc=rs1+imm;
-    output reg out_rddata_memaddr,          //用来判断alu_out是 写入rd中，还是mem中
-    output reg [1:0] jump,//jal :01  jalr: 10  default:00
+    output reg                          write_mem_en               ,//1bit write mem en  
+    output reg         [   1:0]         write_mem                  ,//2bit write mem ctr
+    output reg                          read_mem_en                ,//1bit read mem en
+    output reg         [   2:0]         read_mem                   ,//3bit read mem ctr
+    output reg                          next_pcimm_rs1imm          ,// 1bit 0:pc += imm ; pc=rs1+imm;
+    output reg                          out_rddata_memaddr         ,//用来判断alu_out是 写入rd中，还是mem中
+    output reg         [   1:0]         jump                       ,//jal :01  jalr: 10  default:00
 
     // to reg_flie
-    output reg [4:0] rs1_addr,//rs1 地址
-    output reg[4:0] rs2_addr,//rs2 地址
-    output reg [4:0] rd_addr//rd 地址
+    output reg         [   4:0]         rs1_addr                   ,//rs1 地址
+    output reg         [   4:0]         rs2_addr                   ,//rs2 地址
+    output reg         [   4:0]         rd_addr                     //rd 地址
 
 );
 

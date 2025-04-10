@@ -322,10 +322,9 @@ int main(int argc, char** argv) {
 
     single_cycle();
   // 更新上一个指令
+// //debug diff
 // if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
 //     ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__pc, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
-
-// //debug diff
 //     cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
 //     for (int i = 0; i < 32; ++i)
 //       cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
@@ -338,22 +337,11 @@ int main(int argc, char** argv) {
 //     }
 //     difftest_exec(1);
 
-// // fprintf(reg_dump, "\n========= Register File =========\n");
-// // fprintf(reg_dump ,"pc = %08x inst = %08x\n", top->rootp->top__DOT__u_riscv32__DOT__pc,top->rootp->top__DOT__u_riscv32__DOT__inst);
-// // for (int i = 0; i < 32; i++) {
-// //     fprintf(reg_dump, "x%-2d = 0x%08x  ", i, top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i]);
-// //     if ((i + 1) % 4 == 0) fprintf(reg_dump, "\n");
-// // }
-
-// // fprintf(reg_dump, "=================================\n\n");
 // }
 
 prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
 
-    // if (++cycle_count > 500000) {
-    //   printf("[ERROR] Timeout: Too many cycles.\n");
-    //   break;
-    // }
+
   }
   // tfp->close();
   // delete top;

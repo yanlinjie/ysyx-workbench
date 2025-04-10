@@ -18,8 +18,9 @@ module dual_ram_template #(
     output wire                         wready                     ,
     input  wire                         wen                        ,
     input  wire        [AW-1:0]         w_addr_i                   ,
+	input awvalid,
     input  wire        [DW-1:0]         w_data_i                   ,
-	// input wire 			ren			,
+
     input  wire        [AW-1:0]         r_addr_i                   ,
     input              [   3:0]         wmask                      ,
     output reg         [DW-1:0]         r_data_o                    
@@ -27,12 +28,7 @@ module dual_ram_template #(
 	reg[DW-1:0] memory[0:MEM_NUM-1];
 	wire [31:0] wmask_full;//wmask展开
 
-// //仿真的时候使用
-// 	integer i;
-// initial begin
-// 	for (i = 0; i < MEM_NUM; i = i + 1)
-// 		memory[i] = {DW{1'b0}};
-// end
+
 
 
 
@@ -85,30 +81,15 @@ always @(*) begin
 	endcase
 
 end
-// reg [31:0] r_data_o_1;
-// reg  rvalid_1;
-// //test 打拍后访存效果
-// always @(posedge clk) begin
-// 	rvalid<= rvalid_1;
-// 	r_data_o <=r_data_o_1;
-// end
-
 
 	assign wmask_full = { {8{wmask[3]}}, {8{wmask[2]}}, {8{wmask[1]}}, {8{wmask[0]}} };
-
-	
+wire [AW-1:0] w_addr_i_1;
+assign w_addr_i_1 = awvalid ? w_addr_i : w_addr_i_1;
 	always @(posedge clk)begin
 		if(~rst && wen)
 		begin
-		// 			//  M[waddr] = (wdata & wmask_full) | M[waddr] & ~wmask_full;
-		// $display("[Write] Time=%t Addr=0x%08x", $time, w_addr_i);
-		// $display("        Old Data = 0x%08x", memory[w_addr_i]);
-		// $display("        WData    = 0x%08x", w_data_i);
-		// $display("        WMask    = 0x%08x", wmask_full);
-		// $display("        New Data = 0x%08x", 
-		// (w_data_i & wmask_full) | (memory[w_addr_i] & ~wmask_full));
-			memory[w_addr_i] <= (w_data_i & wmask_full) | ( memory[w_addr_i] & ~wmask_full );
-			monitor_mem_write(w_addr_i, w_data_i, 0);  // 1 = word
+			memory[w_addr_i_1] <= (w_data_i & wmask_full) | ( memory[w_addr_i_1] & ~wmask_full );
+			monitor_mem_write(w_addr_i_1, w_data_i, 0);  
 		end
 
 	end

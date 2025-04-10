@@ -15,7 +15,7 @@ module riscv32(
 
     //AW master 写地址 未完善
     output             [  31:0]         awaddr                     ,
-    // output                              awvalid                    ,
+    output                              awvalid                    ,
     // input                               awready                    ,
 
     //W master 写数据  未完善
@@ -362,6 +362,7 @@ LSU u_LSU(
     .wready                            (wready                    ),
     .wvalid                            (wvalid                    ),
     .ls_write_mem_addr                 (awaddr                    ),
+    .awvalid(awvalid),
 
     .ls_mem_data                       (wdata                     ),
     .wmask                             (wstrb                     ),
