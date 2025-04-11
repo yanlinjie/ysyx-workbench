@@ -71,9 +71,9 @@ reg                    [  31:0]         mtvec, mstatus, mcause, mepc;
 reg                    [   1:0]         state, next_state          ;
 
 
-wire                   [  31:0]         alu_a                      ;
-wire                   [  31:0]         alu_b                      ;
-wire                   [  31:0]         out                        ;
+wire                   [  31:0]         a                      ;
+wire                   [  31:0]         b                      ;
+reg                   [  31:0]         out                        ;
 reg                    [  31:0]         current_pc                 ;
 
     // 状态转移
@@ -87,7 +87,7 @@ always @(posedge clk or posedge rst) begin
 
 end
 
-wire condition_branch;
+reg condition_branch;
 
 // 状态机逻辑
 //jump_pc 可以直接在exu中计算，不管是B型指令，还是jal 还是jalr！
@@ -96,150 +96,103 @@ wire condition_branch;
 always @(*) begin
     case (state)
         IDLE: begin
-            jump_flag=1'b0;
+            jump_flag = 1'b0;
             ex_ready = 1'b1;
             ex_valid = 1'b0;
             write_csr_en = 1'b0;
             ecall_pending = 1'b0;
-            if (id_valid)   begin
-                next_state = WAIT_READY;//执行模块ready后，跳转至wait_input状态
-                case (alu_ctr) //在这里写存储部分吧 目前主要csrrs csrrw : x[rd] = csrs[csr],ecall,mret, ebreak 放到下一时钟周期
-                     //保存旧值，下一时钟周期再载入新值
-                     5'b10011:begin //csrrw
-                        case (imm)
-                            32'h305:begin
-                                write_csr_en = 1'b1;
-                                csr_rd_data = mtvec;
-                                csr_rd_addr = rd_addr;
-                            end 
-                            32'h300:begin
-                                write_csr_en = 1'b1;
-                                csr_rd_data = mstatus;
-                                csr_rd_addr = rd_addr;
-                            end 
-                            32'h342:begin
-                                write_csr_en = 1'b1;
-                                csr_rd_data = mcause;
-                                csr_rd_addr = rd_addr;
-                            end 
-                            32'h341:begin
-                                write_csr_en = 1'b1;
-                                csr_rd_data = mepc;
-                                csr_rd_addr = rd_addr;
-                            end     
-                        endcase
-                        // $display("6666 imm = %h  csr_rd_data = %h  mtvec = %h pc = %h ", imm ,csr_rd_data , mtvec ,pc);
 
-                     end
-                     5'b10100:begin //csrrs
-                        case (imm)
-                            32'h305:begin
-                                write_csr_en = 1'b1;
-                                csr_rd_data = mtvec;
-                                csr_rd_addr = rd_addr;
-                            end 
-                            32'h300:begin
-                                write_csr_en = 1'b1;
-                                csr_rd_data = mstatus;
-                                csr_rd_addr = rd_addr;
-                            end 
-                            32'h342:begin
-                                write_csr_en = 1'b1;
-                                csr_rd_data = mcause;
-                                csr_rd_addr = rd_addr;
-                            end 
-                            32'h341:begin
-                                write_csr_en = 1'b1;
-                                csr_rd_data = mepc;
-                                csr_rd_addr = rd_addr;
-                            end     
-                        endcase
-                        // $display("5555 imm = %h  csr_rd_data = %h  mtvec = %h mstatus = %h mcause = %h mepc = %h pc = %h ", imm ,csr_rd_data , mtvec , mstatus, mcause, mepc ,pc);
-
-                     end
-                    default: begin
-                    end
-                endcase
-            end
-
-            else next_state = IDLE ;
+            if (id_valid)
+                next_state = WAIT_READY;
+            else
+                next_state = IDLE;
         end
+
         WAIT_READY: begin
             ex_ready = 1'b0;
             write_csr_en = 1'b0;
-            if (ls_ready) next_state = IDLE;                    
-            else next_state = WAIT_READY;
-            if (alu_ctr == 5'b10011 || alu_ctr == 5'b10100 || alu_ctr == 5'b10010 || alu_ctr == 5'b10101) begin
-                case (alu_ctr) //在这里写存储部分吧 目前主要csrrs csrrw : x[rd] = csrs[csr],ecall,mret, ebreak 放到下一时钟周期
-                    
-                    5'b10011:begin //csrrw
-                                case (imm)
-                                    32'h305:mtvec = rs1_data;
-                                    32'h300:mstatus = rs1_data;
-                                    32'h342:mcause = rs1_data;
-                                    32'h341:mepc = rs1_data;  
-                                    // 32'h305:mtvec = rs1_data | mtvec;
-                                    // 32'h300:mstatus = rs1_data | mstatus;
-                                    // 32'h342:mcause = rs1_data | mcause;
-                                    // 32'h341:mepc = rs1_data | mepc;       
-                                endcase
-                                ex_valid = 1'b1;
-                                next_state = IDLE;
-                            end
-                    5'b10100:begin //csrrs
-                                case (imm)
-                                    32'h305:mtvec = rs1_data | mtvec;
-                                    32'h300:mstatus = rs1_data | mstatus;
-                                    32'h342:mcause = rs1_data | mcause;
-                                    32'h341:mepc = rs1_data | mepc;   
-                                endcase
-                                ex_valid = 1'b1;
-                                next_state = IDLE;
-                            end
-                    5'b10010: begin
-                                if (imm[0] == 1'b0) begin//ecall
-                                    jump_flag = 1'b1;
-                                    ex_valid = 1'b0;
-                                    jump_pc = mtvec;
-                                    mcause = 32'hffffffff;//这个由软件设置,目前设置的是-1
-                                    mepc = current_pc + 4;// 相当于当前pc + 4 记录自陷的时候当前pc ，+4是为了防止一直陷入
-                                    next_state = IDLE;
-                                //   $display("pc = %h ", pc);
-                                // $display("ecall mepc = %h  mcause = %h mtvec = %h jump_pc = %h current_pc = %h", mepc ,mcause,mtvec, jump_pc ,current_pc);
-                                end else dpi_exit_simulation(); // ebreak
-                            end 
-                    5'b10101:begin //mret
-                            jump_flag = 1'b1;
-                            ex_valid = 1'b0;
-                            jump_pc = mepc ;
-                            next_state = IDLE;
-                            //  $display("mret  mepc = %h  mcause = %h mtvec = %h jump_pc = %h", mepc ,mcause,mtvec ,jump_pc);
+            ex_valid = 1'b0;
+            ecall_pending = 1'b0;
+            jump_flag = 1'b0;
+            next_state = WAIT_READY;
+
+            if (alu_ctr == 5'b10011 || alu_ctr == 5'b10100) begin  // CSR 指令
+                write_csr_en = 1'b1;
+                csr_rd_data = (imm == 32'h305) ? mtvec :
+                              (imm == 32'h300) ? mstatus :
+                              (imm == 32'h342) ? mcause :
+                              (imm == 32'h341) ? mepc : 32'b0;
+                csr_rd_addr = rd_addr;
+
+                case (alu_ctr)
+                    5'b10011: begin  // csrrw
+                        case (imm)
+                            32'h305: mtvec   = rs1_data;
+                            32'h300: mstatus = rs1_data;
+                            32'h342: mcause  = rs1_data;
+                            32'h341: mepc    = rs1_data;
+                        endcase
                     end
-                    default: begin
+                    5'b10100: begin  // csrrs
+                        case (imm)
+                            32'h305: mtvec   = mtvec   | rs1_data;
+                            32'h300: mstatus = mstatus | rs1_data;
+                            32'h342: mcause  = mcause  | rs1_data;
+                            32'h341: mepc    = mepc    | rs1_data;
+                        endcase
                     end
+                    default:begin end
                 endcase
+
+                ex_valid = 1'b1;
+                next_state = IDLE;
             end
-            else if(condition_branch)begin//B type 指令
+            else if (alu_ctr == 5'b10010) begin  // ecall/ebreak
+                if (imm[0] == 1'b0) begin  // ecall
+                    jump_flag = 1'b1;
+                    jump_pc = mtvec;
+                    mcause = 32'hffffffff;
+                    mepc = current_pc + 4;
+                    ex_valid = 1'b0;
+                    next_state = IDLE;
+                end else begin  // ebreak
+                    dpi_exit_simulation();
+                end
+            end
+            else if (alu_ctr == 5'b10101) begin  // mret
+                jump_flag = 1'b1;
+                jump_pc = mepc;
+                ex_valid = 1'b0;
+                next_state = IDLE;
+            end
+            else if (condition_branch) begin  // B型指令
                 jump_flag = 1'b1;
                 jump_pc = current_pc + imm;
-                next_state = IDLE;
                 ex_valid = 1'b0;
-            end else if(jump[0]) begin//jal
+                next_state = IDLE;
+            end
+            else if (jump[0]) begin  // jal
                 jump_next_pc = current_pc + imm;
-                next_state = IDLE;
                 ex_valid = 1'b1;
-            end else if(jump[1]) begin//jal
+                next_state = IDLE;
+            end
+            else if (jump[1]) begin  // jalr
                 jump_next_pc = rs1_data + imm;
-                next_state = IDLE;
                 ex_valid = 1'b1;
-            end 
-                else ex_valid = 1'b1;
-
+                next_state = IDLE;
+            end
+            else begin
+                ex_valid = 1'b1;
+                next_state = IDLE;
+            end
         end
 
-        default: next_state = IDLE;
+        default: begin
+            next_state = IDLE;
+        end
     endcase
 end
+
 
 reg  ex_start;
 
@@ -248,10 +201,8 @@ always @(posedge clk) begin
 end
 
 always @(*) begin 
-    // if(ex_start) begin
         if (out_rddata_memaddr) out_mem_addr = out;
         else out_rd = out ;
-        //输出给下一个模块 
         ex_write_mem_en = write_mem_en;
         ex_read_mem_en = read_mem_en;
         ex_write_mem = write_mem;
@@ -259,11 +210,8 @@ always @(*) begin
         ex_write_reg = write_reg;
         ex_rd_addr = rd_addr;
         ex_rd_aluout_mem = rd_aluout_mem;
-        // ex_imm = imm;
         ex_jump = jump;
         ex_rs2_data = rs2_data;
-    // end  
-    // else out_mem_addr = 1'b0;
 end
 
 mux3_1 mux3_1_inst_a(
@@ -273,7 +221,7 @@ mux3_1 mux3_1_inst_a(
     .b                                 (pc                        ),
     .c                                 (32'b0                     ),
 
-    .out                               (alu_a                     ) 
+    .out                               (a                     ) 
 );
 
 mux3_1 mux3_1_inst_b(
@@ -283,20 +231,43 @@ mux3_1 mux3_1_inst_b(
     .b                                 (imm                       ),
     .c                                 (32'h4                     ),
 
-    .out                               (alu_b                     ) 
+    .out                               (b                     ) 
 );
 
 
 
-alu u_alu(
-    .start                             (ex_start                  ),
-    .aluc                              (alu_ctr                   ),
-    .a                                 (alu_a                     ),
-    .b                                 (alu_b                     ),
-    .out                               (out                       ),
-    .condition_branch                  (condition_branch          ) 
-);
+  // ========= SRA Helper =========
+  wire [31:0] SRA_mask = 32'hffff_ffff >> b[4:0];
+  wire [31:0] sra_result = (a >> b[4:0]) & SRA_mask | ({32{a[31]}} & ~SRA_mask);
 
+  // ========= 组合逻辑 =========
+  always @(*) begin
+    condition_branch = 1'b0;
+    out = 32'b0;
+    case (alu_ctr)
+      5'b00000: out = a + b;
+      5'b00001: out = a - b;
+      5'b00010: out = a & b;
+      5'b00011: out = a | b;
+      5'b00100: out = a ^ b;
+      5'b00101: out = a << b[4:0];
+      5'b00110: out = ($signed(a) < $signed(b)) ? 32'b1 : 32'b0;
+      5'b00111: out = (a < b) ? 32'b1 : 32'b0;
+      5'b01000: out = a >> b[4:0];
+      5'b01001: out = sra_result;
+      5'b01010: begin out = a + b; out[0] = 1'b0; end
 
+      // branch condition
+      5'b01011: condition_branch = (a == b);
+      5'b01100: condition_branch = (a != b);
+      5'b01101: condition_branch = ($signed(a) < $signed(b));
+      5'b01110: condition_branch = ($signed(a) >= $signed(b));
+      5'b01111: condition_branch = (a < b);
+      5'b10000: condition_branch = (a >= b);
+            default:begin
+      end
+    endcase
+
+end
 
 endmodule
