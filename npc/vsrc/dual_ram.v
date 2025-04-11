@@ -68,6 +68,7 @@ always @(*) begin
 			if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
 			else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
 			else r_data_o = memory[r_addr];
+			// $display("r_data_o = %h ",r_data_o);
 			rvalid =1'b1;
 			next_state = READ_IDLE;
 		end 
