@@ -44,7 +44,7 @@ wire [4:0] csr_rd_addr;
 always @(*) begin
     arvalid   = 1'b0;
     if (read_mem_falg) begin
-        raddr = (ls_read_mem_addr >>2);
+        raddr = ((ls_read_mem_addr - 32'h80000000 )>>2);
         arvalid   = ls_arvalid;
         rready = ls_rready;
     end else   begin

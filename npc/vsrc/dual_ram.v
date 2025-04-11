@@ -68,7 +68,7 @@ always @(*) begin
 			if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
 			else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
 			else r_data_o = memory[r_addr];
-			// $display("r_data_o = %h ",r_data_o);
+			//  $display( "r_data_o = %h  r_addr = %h", r_data_o, r_addr);
 			rvalid =1'b1;
 			next_state = READ_IDLE;
 		end 
@@ -83,14 +83,17 @@ always @(*) begin
 
 end
 
+
 	assign wmask_full = { {8{wmask[3]}}, {8{wmask[2]}}, {8{wmask[1]}}, {8{wmask[0]}} };
 wire [AW-1:0] w_addr_i_1;
 assign w_addr_i_1 = awvalid ? w_addr_i : w_addr_i_1;
 	always @(posedge clk)begin
 		if(~rst && wen)
 		begin
-			memory[w_addr_i_1] <= (w_data_i & wmask_full) | ( memory[w_addr_i_1] & ~wmask_full );
-			monitor_mem_write(w_addr_i_1, w_data_i, 0);  
+			if(w_addr_i == 32'h80000fe)
+				monitor_mem_write(w_addr_i, w_data_i, 0);  
+			else
+			memory[w_addr_i] <= (w_data_i & wmask_full) | ( memory[w_addr_i] & ~wmask_full );
 		end
 
 	end

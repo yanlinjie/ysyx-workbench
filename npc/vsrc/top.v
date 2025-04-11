@@ -58,7 +58,9 @@ wire                   [  31:0]         r_data_o                   ;
 dual_ram_template #(
     .DW                                (32                        ),
     .AW                                (32                        ),
-    .MEM_NUM                           (80960000                  ) 
+    // .MEM_NUM                           (40960000                  ) 
+    .MEM_NUM                           (40960000                  ) 
+
     )
 u_dual_ram_template(
     .clk                               (clk                       ),
