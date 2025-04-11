@@ -314,8 +314,8 @@ int main(int argc, char** argv) {
   for (int i = 0; i < 32; ++i)
     cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
 
-  // long program_size = load_program(argv[1]);
-// init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
+  long program_size = load_program(argv[1]);
+init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
   int cycle_count = 0;
   while (true) {
 
@@ -323,21 +323,21 @@ int main(int argc, char** argv) {
     single_cycle();
   // 更新上一个指令
 // //debug diff
-// if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
-//     ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__pc, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
-//     cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
-//     for (int i = 0; i < 32; ++i)
-//       cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
-//     difftest_regcpy(&ref, DIFFTEST_TO_DUT);
-//     //ref 是正确端 dut是
-//     if (!isa_difftest_checkregs(&ref, &cpu)) {
-//       ring_buffer_print();  // 👈 打印 ring buffer
-//       // printf("cycle_count = %d\n", cycle_count);
-//       exit(1);
-//     }
-//     difftest_exec(1);
+if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
+    ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__pc, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
+    cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
+    for (int i = 0; i < 32; ++i)
+      cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
+    difftest_regcpy(&ref, DIFFTEST_TO_DUT);
+    //ref 是正确端 dut是
+    if (!isa_difftest_checkregs(&ref, &cpu)) {
+      ring_buffer_print();  // 👈 打印 ring buffer
+      // printf("cycle_count = %d\n", cycle_count);
+      exit(1);
+    }
+    difftest_exec(1);
 
-// }
+}
 
 prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
 

@@ -67,6 +67,290 @@ reg [6:0] func7;
             WAIT_READY: begin
                 id_valid = 1'b1;
                 id_ready = 1'b0;
+                rs2_addr =instruction[24:20];
+                rs1_addr =instruction[19:15];
+
+                rd_addr= instruction[11:7];
+                func3 =instruction[14:12];
+                func7=instruction[31:25];
+
+                case (instruction[6:0])
+                    // auipc
+                    7'b0010111:begin
+                        write_reg = 1'b1;              //1bit reg write en
+                        rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b01;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        write_mem = 2'b11;              //2bit write mem ctr  
+                        write_mem_en = 1'b0;           //1bit write mem en
+                        read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                        read_mem_en = 1'b0;            //1bit read mem en
+                        alu_ctr = 5'b00000;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b001;              //3bit control imm;
+                        out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b00;       //jal :01  jalr: 10  default:00
+                    end
+                    // lui   x[rd] = imm[31:12] <<12 低位补0;
+                    7'b0110111:begin
+                        write_reg = 1'b1;              //1bit reg write en
+                        rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b10;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        write_mem = 2'b11;              //2bit write mem ctr  
+                        write_mem_en = 1'b0;           //1bit write mem en
+                        read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                        read_mem_en = 1'b0;            //1bit read mem en
+                        alu_ctr = 5'b0;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b001;              //3bit control imm;
+                        out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b00;       //jal :01  jalr: 10  default:00
+                    end
+                    //jal jump  这条指令涉及rd 我会在最后 对next_pc进行jump  
+                    7'b1101111:begin
+                        write_reg = 1'b1;              //1bit reg write en
+                        rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b01;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b10;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        write_mem = 2'b11;              //2bit write mem ctr  
+                        write_mem_en = 1'b0;           //1bit write mem en
+                        read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                        read_mem_en = 1'b0;            //1bit read mem en
+                        alu_ctr = 5'b00000;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b100;              //3bit control imm;
+                        out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b01;       //jal :01  jalr: 10  default:00
+                    end
+                    // jalr
+                    7'b1100111:begin
+                        write_reg = 1'b1;              //1bit reg write en
+                        rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b01;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b10;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        write_mem = 2'b11;              //2bit write mem ctr  
+                        write_mem_en = 1'b0;           //1bit write mem en
+                        read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                        read_mem_en = 1'b0;            //1bit read mem en
+                        alu_ctr = 5'b01010;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b1;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b000;              //3bit control imm;
+                        out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b10;                   //jal :01  jalr: 10  default:00
+                    end
+                    // L型指令
+                    7'b0000011:begin
+                        write_reg = 1'b1;              //1bit reg write en
+                        rd_aluout_mem = 1'b1;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        write_mem = 2'b0;              //2bit write mem ctr  
+                        write_mem_en = 1'b0;           //1bit write mem en
+                        // read_mem = 3'b0;               //3bit read mem ctr
+                        read_mem_en = 1'b1;            //1bit read mem en
+                        alu_ctr = 5'b00000;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b000;              //3bit control imm;
+                        out_rddata_memaddr =1'b1;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b00;       //jal :01  jalr: 10  default:00
+                        case (func3)
+                            //lb
+                            3'b000: read_mem = 3'b000;
+                            //lh
+                            3'b001: read_mem = 3'b001;
+                            //lw
+                            3'b010: read_mem = 3'b010;
+                            //lbu
+                            3'b100: read_mem = 3'b100;
+                            //lhu
+                            3'b101: read_mem = 3'b101;
+                            default: begin
+                            end
+                        endcase
+                    end
+                    //I型指令(addi类型)
+                    7'b0010011:begin
+                        write_reg = 1'b1;              //1bit reg write en
+                        rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        write_mem = 2'b11;              //2bit write mem ctr  
+                        write_mem_en = 1'b0;           //1bit write mem en
+                        read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                        read_mem_en = 1'b0;            //1bit read mem en
+                        // alu_ctr <= 5'b0;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b000;              //3bit control imm;
+                        out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b00;       //jal :01  jalr: 10  default:00
+                        case (func3)
+                            //addi    
+                            3'b000: alu_ctr = 5'b00000;
+                            //slti
+                            3'b010: alu_ctr = 5'b00110;
+                            // sltiu
+                            3'b011: alu_ctr = 5'b00111;
+                            // xori
+                            3'b100: alu_ctr = 5'b00100;
+                            // ori
+                            3'b110: alu_ctr = 5'b00011;
+                            // andi
+                            3'b111: alu_ctr = 5'b00010;
+                            // slli
+                            3'b001: alu_ctr = 5'b00101;
+                            // srli, srai
+                            3'b101:begin
+                                if(func7[5])begin//srai
+                                    imm_ctr = 3'b101;
+                                    alu_ctr = 5'b01001;
+                                end
+                                else alu_ctr = 5'b01000;//srli
+                            end
+                            default: begin
+                            end
+                        endcase
+                    end
+                    //B型指令
+                    7'b1100011:begin
+                        write_reg = 1'b0;              //1bit reg write en
+                        rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b00;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        write_mem = 2'b0;              //2bit write mem ctr  
+                        write_mem_en = 1'b0;           //1bit write mem en
+                        read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                        read_mem_en = 1'b0;            //1bit read mem en
+                        // alu_ctr = 5'b0;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b011;              //3bit control imm;
+                        out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b00;       //jal :01  jalr: 10  default:00
+                        case (func3)
+                            // beq
+                            3'b000: alu_ctr = 5'b01011;
+                            // bne
+                            3'b001: alu_ctr = 5'b01100;
+                            // blt
+                            3'b100: alu_ctr = 5'b01101;
+                            // bge
+                            3'b101: alu_ctr = 5'b01110;
+                            // bltu
+                            3'b110: alu_ctr = 5'b01111;
+                            // bgeu
+                            3'b111: alu_ctr = 5'b10000;
+                            default:begin
+                            end
+                        endcase
+                    end
+                    // R型指令
+                    7'b0110011:begin
+                        write_reg = 1'b1;              //1bit reg write en
+                        rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b00;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        write_mem = 2'b11;              //2bit write mem ctr  
+                        write_mem_en = 1'b0;           //1bit write mem en
+                        read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                        read_mem_en = 1'b0;            //1bit read mem en
+                        // alu_ctr = 5'b01010;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b111;              //3bit control imm;
+                        out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b00;                   //jal :01  jalr: 10  default:00
+
+                        case (func3)
+                            // sub, add
+                            3'b000:begin
+                                if(func7[5])begin
+                                    alu_ctr = 5'b00001;
+                                end else begin
+                                    alu_ctr = 5'b00000;
+                                end
+                            end
+                            // or
+                            3'b110: alu_ctr = 5'b00011;
+                            // and
+                            3'b111: alu_ctr = 5'b00010;
+                            // xor
+                            3'b100: alu_ctr = 5'b00100;
+                            // sll
+                            3'b001: alu_ctr = 5'b00101;
+                            // slt
+                            3'b010:alu_ctr = 5'b00110;
+                            // sltu
+                            3'b011: alu_ctr = 5'b00111;
+                            // srl, sra
+                            3'b101:begin
+                                if(func7[5]) alu_ctr = 5'b01001;   //sra
+                                else alu_ctr = 5'b01000;           //srl
+                            end 
+                            default: begin
+                            end
+                        endcase
+                    end
+                    // S型指令
+                    7'b0100011:begin
+                        write_reg = 1'b0;              //1bit reg write en
+                        rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        // write_mem = 2'b11;              //2bit write mem ctr  
+                        write_mem_en = 1'b1;           //1bit write mem en
+                        read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                        read_mem_en = 1'b0;            //1bit read mem en
+                        alu_ctr = 5'b00000;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b010;              //3bit control imm;
+                        out_rddata_memaddr =1'b1;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b00;                   //jal :01  jalr: 10  default:00
+                        case (func3)
+                            // sw
+                            3'b010: write_mem = 2'b10;
+                            // sh
+                            3'b001: write_mem = 2'b01;
+                            // sb
+                            3'b000: write_mem = 2'b00;
+                            default: begin
+                            end
+                        endcase
+                    end
+                        // ebreak
+                    7'b1110011:begin
+                        write_reg = 1'b0;              //1bit reg write en
+                        rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+                        alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+                        alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+                        write_mem = 2'b11;              //2bit write mem ctr  
+                        write_mem_en = 1'b0;           //1bit write mem en
+                        read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+                        read_mem_en = 1'b0;            //1bit read mem en
+                        // alu_ctr = 5'b00000;                //5bit control alu
+                        next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+                        imm_ctr = 3'b000;              //3bit control imm;
+                        out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+                        jump = 2'b00;       //jal :01  jalr: 10  default:00
+                        // dpi_exit_simulation();
+                        case (func3)
+                            3'b000:  begin  //ecall and ebreak
+                                alu_ctr = 5'b10010;
+                                if (func7 ==7'b0011000 ) begin
+                                    alu_ctr = 5'b10101;//mret
+                                end
+                            end
+                            3'b001:   begin//csrrw
+                                alu_ctr = 5'b10011;
+                            end//csrrw
+                            3'b010: begin //csrrs
+                                alu_ctr = 5'b10100;
+                            end
+                            default: begin
+                            end
+                        endcase
+                    end
+                    default: begin
+                    end
+                endcase
                 if (ex_ready) next_state = IDLE;
                 else next_state = WAIT_READY;
             end
@@ -75,355 +359,7 @@ reg [6:0] func7;
         endcase
     end
 
-reg  id_start;
-// 这里和 IDU 有点不一样, 可能三选一结构延迟比较小？
-always @(posedge clk) begin
-        id_start = (state == IDLE && pc_valid);
-end
-//还是使用组合逻辑吧！这样可以对齐时钟周期
-    always @(*) begin
-        //  if (id_start) begin  //当处于IDLE状态时,并且指令有效时,则在下一周期的上升沿开始译码！
-            // // opcode <= instruction[6:0];
-            rs2_addr =instruction[24:20];
-            rs1_addr =instruction[19:15];
-
-            rd_addr= instruction[11:7];
-            func3 =instruction[14:12];
-            func7=instruction[31:25];
-
-            case (instruction[6:0])
-                // auipc
-                7'b0010111:begin
-                    write_reg = 1'b1;              //1bit reg write en
-                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b01;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    write_mem = 2'b11;              //2bit write mem ctr  
-                    write_mem_en = 1'b0;           //1bit write mem en
-                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
-                    read_mem_en = 1'b0;            //1bit read mem en
-                    alu_ctr = 5'b00000;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b001;              //3bit control imm;
-                    out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b00;       //jal :01  jalr: 10  default:00
-                end
-                // lui   x[rd] = imm[31:12] <<12 低位补0;
-                7'b0110111:begin
-                    write_reg = 1'b1;              //1bit reg write en
-                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b10;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    write_mem = 2'b11;              //2bit write mem ctr  
-                    write_mem_en = 1'b0;           //1bit write mem en
-                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
-                    read_mem_en = 1'b0;            //1bit read mem en
-                    alu_ctr = 5'b0;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b001;              //3bit control imm;
-                    out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b00;       //jal :01  jalr: 10  default:00
-                end
-                //jal jump  这条指令涉及rd 我会在最后 对next_pc进行jump  
-                7'b1101111:begin
-                    write_reg = 1'b1;              //1bit reg write en
-                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b01;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b10;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    write_mem = 2'b11;              //2bit write mem ctr  
-                    write_mem_en = 1'b0;           //1bit write mem en
-                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
-                    read_mem_en = 1'b0;            //1bit read mem en
-                    alu_ctr = 5'b00000;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b100;              //3bit control imm;
-                    out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b01;       //jal :01  jalr: 10  default:00
-                end
-                // jalr
-                7'b1100111:begin
-                    write_reg = 1'b1;              //1bit reg write en
-                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b01;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b10;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    write_mem = 2'b11;              //2bit write mem ctr  
-                    write_mem_en = 1'b0;           //1bit write mem en
-                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
-                    read_mem_en = 1'b0;            //1bit read mem en
-                    alu_ctr = 5'b01010;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b1;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b000;              //3bit control imm;
-                    out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b10;                   //jal :01  jalr: 10  default:00
-                end
-                // L型指令
-                7'b0000011:begin
-                    write_reg = 1'b1;              //1bit reg write en
-                    rd_aluout_mem = 1'b1;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    write_mem = 2'b0;              //2bit write mem ctr  
-                    write_mem_en = 1'b0;           //1bit write mem en
-                    // read_mem = 3'b0;               //3bit read mem ctr
-                    read_mem_en = 1'b1;            //1bit read mem en
-                    alu_ctr = 5'b00000;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b000;              //3bit control imm;
-                    out_rddata_memaddr =1'b1;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b00;       //jal :01  jalr: 10  default:00
-                    case (func3)
-                        //lb
-                        3'b000: read_mem = 3'b000;
-                        //lh
-                        3'b001: read_mem = 3'b001;
-                        //lw
-                        3'b010: read_mem = 3'b010;
-                        //lbu
-                        3'b100: read_mem = 3'b100;
-                        //lhu
-                        3'b101: read_mem = 3'b101;
-                        default: begin
-                        end
-                    endcase
-                end
-                //I型指令(addi类型)
-                7'b0010011:begin
-                    write_reg = 1'b1;              //1bit reg write en
-                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    write_mem = 2'b11;              //2bit write mem ctr  
-                    write_mem_en = 1'b0;           //1bit write mem en
-                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
-                    read_mem_en = 1'b0;            //1bit read mem en
-                    // alu_ctr <= 5'b0;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b000;              //3bit control imm;
-                    out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b00;       //jal :01  jalr: 10  default:00
-                    case (func3)
-                        //addi    
-                        3'b000: alu_ctr = 5'b00000;
-                        //slti
-                        3'b010: alu_ctr = 5'b00110;
-                        // sltiu
-                        3'b011:begin
-                            alu_ctr = 5'b00111;
-                        end
-                        // xori
-                        3'b100:begin
-                            alu_ctr = 5'b00100;
-                        end
-                        // ori
-                        3'b110:begin
-                            alu_ctr = 5'b00011;
-                        end
-                        // andi
-                        3'b111:begin
-                            alu_ctr = 5'b00010;
-                        end
-                        // slli
-                        3'b001:begin
-                            alu_ctr = 5'b00101;
-                        end
-                        // srli, srai
-                        3'b101:begin
-                            if(func7[5])begin//srai
-                                imm_ctr = 3'b101;
-                                alu_ctr = 5'b01001;
-                            end
-                            else alu_ctr = 5'b01000;//srli
-                        end
-                        default: begin
-                        end
-                    endcase
-                end
-                //B型指令
-                7'b1100011:begin
-                    write_reg = 1'b0;              //1bit reg write en
-                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b00;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    write_mem = 2'b0;              //2bit write mem ctr  
-                    write_mem_en = 1'b0;           //1bit write mem en
-                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
-                    read_mem_en = 1'b0;            //1bit read mem en
-                    // alu_ctr = 5'b0;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b011;              //3bit control imm;
-                    out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b00;       //jal :01  jalr: 10  default:00
-                    case (func3)
-                        // beq
-                        3'b000:begin
-                            alu_ctr = 5'b01011;
-                        end
-                        // bne
-                        3'b001:begin
-                            alu_ctr = 5'b01100;
-                        end
-                        // blt
-                        3'b100: begin
-                            alu_ctr = 5'b01101;
-                        end
-                        // bge
-                        3'b101:begin
-                            alu_ctr = 5'b01110;
-                        end
-                        // bltu
-                        3'b110:begin
-                            alu_ctr = 5'b01111;
-                        end
-                        // bgeu
-                        3'b111:begin
-                            alu_ctr = 5'b10000;
-                        end
-                        default:begin
-                            
-                        end
-                    endcase
-                end
-                // R型指令
-                7'b0110011:begin
-                    write_reg = 1'b1;              //1bit reg write en
-                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b00;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    write_mem = 2'b11;              //2bit write mem ctr  
-                    write_mem_en = 1'b0;           //1bit write mem en
-                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
-                    read_mem_en = 1'b0;            //1bit read mem en
-                    // alu_ctr = 5'b01010;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b111;              //3bit control imm;
-                    out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b00;                   //jal :01  jalr: 10  default:00
-
-                    case (func3)
-                        // sub, add
-                        3'b000:begin
-                            if(func7[5])begin
-                                alu_ctr = 5'b00001;
-                            end else begin
-                                alu_ctr = 5'b00000;
-                            end
-                        end
-                        // or
-                        3'b110:begin
-                            alu_ctr = 5'b00011;
-                        end
-                        // and
-                        3'b111:begin
-                            alu_ctr = 5'b00010;
-                        end
-                        // xor
-                        3'b100:begin
-                            alu_ctr = 5'b00100;
-                        end
-                        // sll
-                        3'b001:begin
-                            alu_ctr = 5'b00101;
-                        end
-                        // slt
-                        3'b010:begin
-                            alu_ctr = 5'b00110;
-                        end
-                        // sltu
-                        3'b011:begin
-                            alu_ctr = 5'b00111;
-                        end
-                        // srl, sra
-                        3'b101:begin
-                            if(func7[5]) alu_ctr = 5'b01001;   //sra
-                            else alu_ctr = 5'b01000;           //srl
-                        end 
-                        default: begin
-                            
-                        end
-                    endcase
-                end
-                // S型指令
-                7'b0100011:begin
-                    write_reg = 1'b0;              //1bit reg write en
-                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    // write_mem = 2'b11;              //2bit write mem ctr  
-                    write_mem_en = 1'b1;           //1bit write mem en
-                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
-                    read_mem_en = 1'b0;            //1bit read mem en
-                    alu_ctr = 5'b00000;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b010;              //3bit control imm;
-                    out_rddata_memaddr =1'b1;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b00;                   //jal :01  jalr: 10  default:00
-                    case (func3)
-                        // sw
-                        3'b010:begin
-                            write_mem = 2'b10;
-                        end
-                        // sh
-                        3'b001:begin
-                            write_mem = 2'b01;
-                        end
-                        // sb
-                        3'b000:begin
-                            write_mem = 2'b00;
-                        end
-                        default: begin
-                        end
-                    endcase
-                end
-                    // ebreak
-                7'b1110011:begin
-                    write_reg = 1'b0;              //1bit reg write en
-                    rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
-                    alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
-                    alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
-                    write_mem = 2'b11;              //2bit write mem ctr  
-                    write_mem_en = 1'b0;           //1bit write mem en
-                    read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
-                    read_mem_en = 1'b0;            //1bit read mem en
-                    // alu_ctr = 5'b00000;                //5bit control alu
-                    next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                    imm_ctr = 3'b000;              //3bit control imm;
-                    out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
-                    jump = 2'b00;       //jal :01  jalr: 10  default:00
-                    // dpi_exit_simulation();
-                    case (func3)
-                        3'b000:  begin  //ecall and ebreak
-                            alu_ctr = 5'b10010;
-                            if (func7 ==7'b0011000 ) begin
-                                alu_ctr = 5'b10101;//mret
-                            end
-                        end
-                        3'b001:   begin//csrrw
-                        // write_csr_reg = 1;
-                            alu_ctr = 5'b10011;
-                        end//csrrw
-                        3'b010: begin //csrrs
-                        // write_csr_reg = 1;
-                            alu_ctr = 5'b10100;
-                        end
-
-                        default: begin
-                            
-                        end
-                    endcase
-                    
-                    // nemu_trap(pc);
-                    
-                end
-                default: begin
-                end
-
-            endcase
-        // end
-    end
-
 always @(*) begin
-
-
         case (imm_ctr)
             3'b000:begin 
                 imm_32 = {{20{instruction[31]}}, instruction[31:20]};//3
@@ -449,12 +385,305 @@ always @(*) begin
                 imm_32 = 32'b0;
             end 
             default:begin
-                // imm_32 = 32'b0;
+                imm_32 = 32'b0;
             end 
         endcase
-        
-
 end
+
+// reg  id_start;
+// // 这里和 IDU 有点不一样, 可能三选一结构延迟比较小？
+// always @(posedge clk) begin
+//         id_start = (state == IDLE && pc_valid);
+// end
+//还是使用组合逻辑吧！这样可以对齐时钟周期
+    // always @(*) begin
+            // rs2_addr =instruction[24:20];
+            // rs1_addr =instruction[19:15];
+
+            // rd_addr= instruction[11:7];
+            // func3 =instruction[14:12];
+            // func7=instruction[31:25];
+
+            // case (instruction[6:0])
+            //     // auipc
+            //     7'b0010111:begin
+            //         write_reg = 1'b1;              //1bit reg write en
+            //         rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b01;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         write_mem = 2'b11;              //2bit write mem ctr  
+            //         write_mem_en = 1'b0;           //1bit write mem en
+            //         read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+            //         read_mem_en = 1'b0;            //1bit read mem en
+            //         alu_ctr = 5'b00000;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b001;              //3bit control imm;
+            //         out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b00;       //jal :01  jalr: 10  default:00
+            //     end
+            //     // lui   x[rd] = imm[31:12] <<12 低位补0;
+            //     7'b0110111:begin
+            //         write_reg = 1'b1;              //1bit reg write en
+            //         rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b10;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         write_mem = 2'b11;              //2bit write mem ctr  
+            //         write_mem_en = 1'b0;           //1bit write mem en
+            //         read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+            //         read_mem_en = 1'b0;            //1bit read mem en
+            //         alu_ctr = 5'b0;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b001;              //3bit control imm;
+            //         out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b00;       //jal :01  jalr: 10  default:00
+            //     end
+            //     //jal jump  这条指令涉及rd 我会在最后 对next_pc进行jump  
+            //     7'b1101111:begin
+            //         write_reg = 1'b1;              //1bit reg write en
+            //         rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b01;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b10;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         write_mem = 2'b11;              //2bit write mem ctr  
+            //         write_mem_en = 1'b0;           //1bit write mem en
+            //         read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+            //         read_mem_en = 1'b0;            //1bit read mem en
+            //         alu_ctr = 5'b00000;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b100;              //3bit control imm;
+            //         out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b01;       //jal :01  jalr: 10  default:00
+            //     end
+            //     // jalr
+            //     7'b1100111:begin
+            //         write_reg = 1'b1;              //1bit reg write en
+            //         rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b01;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b10;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         write_mem = 2'b11;              //2bit write mem ctr  
+            //         write_mem_en = 1'b0;           //1bit write mem en
+            //         read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+            //         read_mem_en = 1'b0;            //1bit read mem en
+            //         alu_ctr = 5'b01010;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b1;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b000;              //3bit control imm;
+            //         out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b10;                   //jal :01  jalr: 10  default:00
+            //     end
+            //     // L型指令
+            //     7'b0000011:begin
+            //         write_reg = 1'b1;              //1bit reg write en
+            //         rd_aluout_mem = 1'b1;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         write_mem = 2'b0;              //2bit write mem ctr  
+            //         write_mem_en = 1'b0;           //1bit write mem en
+            //         // read_mem = 3'b0;               //3bit read mem ctr
+            //         read_mem_en = 1'b1;            //1bit read mem en
+            //         alu_ctr = 5'b00000;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b000;              //3bit control imm;
+            //         out_rddata_memaddr =1'b1;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b00;       //jal :01  jalr: 10  default:00
+            //         case (func3)
+            //             //lb
+            //             3'b000: read_mem = 3'b000;
+            //             //lh
+            //             3'b001: read_mem = 3'b001;
+            //             //lw
+            //             3'b010: read_mem = 3'b010;
+            //             //lbu
+            //             3'b100: read_mem = 3'b100;
+            //             //lhu
+            //             3'b101: read_mem = 3'b101;
+            //             default: begin
+            //             end
+            //         endcase
+            //     end
+            //     //I型指令(addi类型)
+            //     7'b0010011:begin
+            //         write_reg = 1'b1;              //1bit reg write en
+            //         rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         write_mem = 2'b11;              //2bit write mem ctr  
+            //         write_mem_en = 1'b0;           //1bit write mem en
+            //         read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+            //         read_mem_en = 1'b0;            //1bit read mem en
+            //         // alu_ctr <= 5'b0;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b000;              //3bit control imm;
+            //         out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b00;       //jal :01  jalr: 10  default:00
+            //         case (func3)
+            //             //addi    
+            //             3'b000: alu_ctr = 5'b00000;
+            //             //slti
+            //             3'b010: alu_ctr = 5'b00110;
+            //             // sltiu
+            //             3'b011: alu_ctr = 5'b00111;
+            //             // xori
+            //             3'b100: alu_ctr = 5'b00100;
+            //             // ori
+            //             3'b110: alu_ctr = 5'b00011;
+            //             // andi
+            //             3'b111: alu_ctr = 5'b00010;
+            //             // slli
+            //             3'b001: alu_ctr = 5'b00101;
+            //             // srli, srai
+            //             3'b101:begin
+            //                 if(func7[5])begin//srai
+            //                     imm_ctr = 3'b101;
+            //                     alu_ctr = 5'b01001;
+            //                 end
+            //                 else alu_ctr = 5'b01000;//srli
+            //             end
+            //             default: begin
+            //             end
+            //         endcase
+            //     end
+            //     //B型指令
+            //     7'b1100011:begin
+            //         write_reg = 1'b0;              //1bit reg write en
+            //         rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b00;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         write_mem = 2'b0;              //2bit write mem ctr  
+            //         write_mem_en = 1'b0;           //1bit write mem en
+            //         read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+            //         read_mem_en = 1'b0;            //1bit read mem en
+            //         // alu_ctr = 5'b0;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b011;              //3bit control imm;
+            //         out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b00;       //jal :01  jalr: 10  default:00
+            //         case (func3)
+            //             // beq
+            //             3'b000: alu_ctr = 5'b01011;
+            //             // bne
+            //             3'b001: alu_ctr = 5'b01100;
+            //             // blt
+            //             3'b100: alu_ctr = 5'b01101;
+            //             // bge
+            //             3'b101: alu_ctr = 5'b01110;
+            //             // bltu
+            //             3'b110: alu_ctr = 5'b01111;
+            //             // bgeu
+            //             3'b111: alu_ctr = 5'b10000;
+            //             default:begin
+            //             end
+            //         endcase
+            //     end
+            //     // R型指令
+            //     7'b0110011:begin
+            //         write_reg = 1'b1;              //1bit reg write en
+            //         rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b00;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         write_mem = 2'b11;              //2bit write mem ctr  
+            //         write_mem_en = 1'b0;           //1bit write mem en
+            //         read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+            //         read_mem_en = 1'b0;            //1bit read mem en
+            //         // alu_ctr = 5'b01010;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b111;              //3bit control imm;
+            //         out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b00;                   //jal :01  jalr: 10  default:00
+
+            //         case (func3)
+            //             // sub, add
+            //             3'b000:begin
+            //                 if(func7[5])begin
+            //                     alu_ctr = 5'b00001;
+            //                 end else begin
+            //                     alu_ctr = 5'b00000;
+            //                 end
+            //             end
+            //             // or
+            //             3'b110: alu_ctr = 5'b00011;
+            //             // and
+            //             3'b111: alu_ctr = 5'b00010;
+            //             // xor
+            //             3'b100: alu_ctr = 5'b00100;
+            //             // sll
+            //             3'b001: alu_ctr = 5'b00101;
+            //             // slt
+            //             3'b010:alu_ctr = 5'b00110;
+            //             // sltu
+            //             3'b011: alu_ctr = 5'b00111;
+            //             // srl, sra
+            //             3'b101:begin
+            //                 if(func7[5]) alu_ctr = 5'b01001;   //sra
+            //                 else alu_ctr = 5'b01000;           //srl
+            //             end 
+            //             default: begin
+            //             end
+            //         endcase
+            //     end
+            //     // S型指令
+            //     7'b0100011:begin
+            //         write_reg = 1'b0;              //1bit reg write en
+            //         rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         // write_mem = 2'b11;              //2bit write mem ctr  
+            //         write_mem_en = 1'b1;           //1bit write mem en
+            //         read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+            //         read_mem_en = 1'b0;            //1bit read mem en
+            //         alu_ctr = 5'b00000;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b010;              //3bit control imm;
+            //         out_rddata_memaddr =1'b1;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b00;                   //jal :01  jalr: 10  default:00
+            //         case (func3)
+            //             // sw
+            //             3'b010: write_mem = 2'b10;
+            //             // sh
+            //             3'b001: write_mem = 2'b01;
+            //             // sb
+            //             3'b000: write_mem = 2'b00;
+            //             default: begin
+            //             end
+            //         endcase
+            //     end
+            //         // ebreak
+            //     7'b1110011:begin
+            //         write_reg = 1'b0;              //1bit reg write en
+            //         rd_aluout_mem = 1'b0;          //1bit: rd from alu or mem. 0:from alu, 1:from mem 
+            //         alua_rs1_pc_zero = 2'b00;       //2bit: alu's a from rs1 , pc , 0. 00:rs1, 01:pc, 10: 0
+            //         alub_rs2_imm_4 = 2'b01;         //2bit: alu's b from rs2 ,imm , 4. 00:rs2, 01:imm, 10:4
+            //         write_mem = 2'b11;              //2bit write mem ctr  
+            //         write_mem_en = 1'b0;           //1bit write mem en
+            //         read_mem = 3'b011;               //3bit read mem ctr 默认值使用011,
+            //         read_mem_en = 1'b0;            //1bit read mem en
+            //         // alu_ctr = 5'b00000;                //5bit control alu
+            //         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
+            //         imm_ctr = 3'b000;              //3bit control imm;
+            //         out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
+            //         jump = 2'b00;       //jal :01  jalr: 10  default:00
+            //         // dpi_exit_simulation();
+            //         case (func3)
+            //             3'b000:  begin  //ecall and ebreak
+            //                 alu_ctr = 5'b10010;
+            //                 if (func7 ==7'b0011000 ) begin
+            //                     alu_ctr = 5'b10101;//mret
+            //                 end
+            //             end
+            //             3'b001:   begin//csrrw
+            //                 alu_ctr = 5'b10011;
+            //             end//csrrw
+            //             3'b010: begin //csrrs
+            //                 alu_ctr = 5'b10100;
+            //             end
+            //             default: begin
+            //             end
+            //         endcase
+            //     end
+            //     default: begin
+            //     end
+            // endcase
+    // end
+
+
 
 
 

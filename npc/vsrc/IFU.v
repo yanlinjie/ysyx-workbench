@@ -1,62 +1,58 @@
 module IFU( 
-    input clk,
-    input rst,
+    input                               clk                        ,
+    input                               rst                        ,
 
-    input  arready,//arready
-    output reg        read_en,//arvalid
-    output reg rready,
+    input                               arready                    ,//arready
+    output reg                          read_en                    ,//arvalid
+    output reg                          rready                     ,
 
-    input [31:0] next_inst,
-    input rvalid,
-    input [31:0] next_pc,
-    input        id_ready,
-    input        down,             
-    input jump_flag,
-    input [31:0] jump_pc,
-    input [31:0] imm,
+    input              [  31:0]         next_inst                  ,
+    input                               rvalid                     ,
+    input              [  31:0]         next_pc                    ,
+    input                               id_ready                   ,
+    input                               down                       ,
+    input                               jump_flag                  ,
+    input              [  31:0]         jump_pc                    ,
+    input              [  31:0]         imm                        ,
 
-    output reg        inst_valid,
-    output reg [31:0] pc,
+    output reg                          inst_valid                 ,
+    output reg         [  31:0]         pc                         ,
 
-    output reg [31:0] inst
+    output reg         [  31:0]         inst                        
 );
 
-    // 状态定义（使用 localparam）
-    localparam IDLE             = 3'b000;
-    localparam WAIT_READY       = 3'b001;
-    localparam BOOT             = 3'b010;//初始复位状态
-    localparam WAIT_MEM_READY   = 3'b011;
-    // localparam WAIT_MEM_VALID   = 3'b100;
 
-    reg [2:0] state;
-    reg [2:0] next_state;
+localparam IDLE             = 3'd0;
+localparam WAIT_READY       = 3'd1;
+localparam BOOT             = 3'd2;//初始复位状态
+localparam WAIT_MEM_READY   = 3'd3;
+
+
+reg                    [   2:0]         state                      ;
+reg                    [   2:0]         next_state                 ;
 
     // 状态更新逻辑
-    always @(posedge clk or posedge rst) begin
-        if (rst)
-            state <= BOOT;
-        else
-            state <= next_state;
-    end
+always @(posedge clk or posedge rst) begin
+    if (rst)
+        state <= BOOT;
+    else
+        state <= next_state;
+end
 
     // 状态转移判断
     always @(*) begin
         case (state)
             BOOT: begin
-                // read_en <= 1'b1;
-                inst_valid = 1'b0;
-                rready = 1'b1;
-                pc = next_pc;
-                
+                inst_valid = 1'b0;   //
+                rready = 1'b1;       //master read ready
+                read_en = 1'b1;     //valid 
+                pc = next_pc;       //addr
                 if ( ~arready ) begin
                     next_state = WAIT_MEM_READY;
                 end else  begin
-                    read_en = 1'b1;
                     next_state = WAIT_READY;
                 end 
-
             end
-
             IDLE : begin
                  rready = 1'b1;
                  read_en = 1'b0;  
@@ -91,34 +87,11 @@ module IFU(
                     read_en = 1'b1;
                 end else next_state = WAIT_MEM_READY;
             end
-            // WAIT_MEM_VALID:begin
-                
-            // end
-
             default:
                 next_state = IDLE ;
         endcase
     end
 
-// reg  if_start;
-// // 这里和 IDU 有点不一样, 可能三选一结构延迟比较小？
-// always @(posedge clk) begin
-//         if_start = (state == IDLE);
-// end
-
-
-
-// reg condition_branch_d1; // 上一个周期的值
-// wire condition_branch_rising;
-
-// always @(posedge clk or posedge rst) begin
-//     if (rst)
-//         condition_branch_d1 <= 1'b0;
-//     else
-//         condition_branch_d1 <= condition_branch;
-// end
-
-// assign condition_branch_rising = (condition_branch == 1'b1) && (condition_branch_d1 == 1'b0);
 
 
 
