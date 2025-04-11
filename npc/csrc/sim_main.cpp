@@ -78,11 +78,8 @@ extern "C" void monitor_mem_write(uint32_t addr, uint32_t data, uint32_t wtype) 
     uint32_t oaddr = addr;
     uint32_t odata = data;
     if (oaddr == ((0xa00003f8-0x80000000 )/4)) 
-    {
-      // printf("[MEM WRITE] \n");
       printf("%c", odata);//直接使用printf 打印出数据
-      // exit(0);
-    }
+
 }
 // ========= Ring Buffer =========
 typedef struct {
@@ -171,11 +168,7 @@ static void rst(int n) {
   top->rst = 0;
 }
 
-uint32_t fetch_instruction(uint32_t pc) {
-  uint32_t index = ((pc - PC_START) >> 2);
-  
-  return rom_mem[index];
-}
+
 
 int load_program(const char* filename) {
   std::ifstream file(filename, std::ios::binary);
@@ -200,26 +193,7 @@ int load_program(const char* filename) {
   return index * 4;
 }
 
-void load_bin_to_data_mem(const char* bin_file_path) {
-  std::ifstream file(bin_file_path, std::ios::binary);
-  if (!file) {
-      std::cerr << "Failed to open .bin file: " << bin_file_path << std::endl;
-      exit(1);
-  }
 
-  int idx = 0;
-  char byte;
-  while (file.get(byte)) {
-      if (idx >= 163840000) {
-          std::cerr << "Error: .bin file too large for data memory!" << std::endl;
-          break;
-      }
-      // top->rootp->top__DOT__DATA_MEM__DOT__data[idx] = static_cast<uint8_t>(byte);
-      idx++;
-  }
-
-  std::cout << "Loaded " << idx << " bytes into DATA_MEM.data[]" << std::endl;
-}
 
 void load_bin_to_inst_mem(const char* bin_file_path) {
   std::ifstream file(bin_file_path, std::ios::binary);
@@ -305,47 +279,39 @@ int main(int argc, char** argv) {
 
   rst(10);
 
-  // cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
-  // for (int i = 0; i < 32; ++i)
-  //   cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
 
 
-  // uint32_t prev_inst = 0;  // 初始化为0或其他非法指令
-  // cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
-  // for (int i = 0; i < 32; ++i)
-  //   cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
-
-  // long program_size = load_program(argv[1]);
-// init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
+// //debug diff
+  uint32_t prev_inst = 0;  // 初始化为0或其他非法指令
+  cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
+  for (int i = 0; i < 32; ++i)
+    cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
+  long program_size = load_program(argv[1]);
+  init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
   int cycle_count = 0;
   while (true) {
 
 
     single_cycle();
-  // 更新上一个指令
+
 // //debug diff
+if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
+    fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__u_riscv32__DOT__pc - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
 
-
-
-// if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
-//     fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__u_riscv32__DOT__pc - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
-
-//     ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__pc, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
-//     cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
-//     for (int i = 0; i < 32; ++i)
-//       cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
-//     difftest_regcpy(&ref, DIFFTEST_TO_DUT);
-//     //ref 是正确端 dut是
-//     if (!isa_difftest_checkregs(&ref, &cpu)) {
-//       ring_buffer_print();  // 👈 打印 ring buffer
-//       // printf("cycle_count = %d\n", cycle_count);
-//       exit(1);
-//     }
-//     difftest_exec(1);
-
-// }
-
-// prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
+    ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__pc, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
+    cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
+    for (int i = 0; i < 32; ++i)
+      cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
+    difftest_regcpy(&ref, DIFFTEST_TO_DUT);
+    //ref 是正确端 dut是
+    if (!isa_difftest_checkregs(&ref, &cpu)) {
+      ring_buffer_print();  // 👈 打印 ring buffer
+      // printf("cycle_count = %d\n", cycle_count);
+      exit(1);
+    }
+    difftest_exec(1);
+}
+prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
 
 
   }

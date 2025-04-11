@@ -88,11 +88,7 @@ always @(posedge clk or posedge rst) begin
 end
 
 wire condition_branch;
-// reg[31:0] current_pc;
-// always @(posedge clk)
-// begin
-//     current_pc <=pc;
-// end
+
 // 状态机逻辑
 //jump_pc 可以直接在exu中计算，不管是B型指令，还是jal 还是jalr！
 //对于B型指令，则直接传送给IFU
