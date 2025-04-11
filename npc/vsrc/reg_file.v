@@ -1,12 +1,12 @@
 module reg_file(
     input                               rst, clk, write_reg        ,
-    input              [   4: 0]        rs1, rs2, target_reg       ,
-    input              [  31: 0]        write_rd_data              ,
-    input [4:0] reg_csr_rd_addr,
-    input [31:0] csr_data,
-input write_csr_en,
-    output reg         [  31: 0]        read_rs1_data              ,
-    output reg         [  31: 0]        read_rs2_data               
+    input              [   4:0]         rs1, rs2, target_reg       ,
+    input              [  31:0]         write_rd_data              ,
+    input              [   4:0]         reg_csr_rd_addr            ,
+    input              [  31:0]         csr_data                   ,
+    input                               write_csr_en               ,
+    output reg         [  31:0]         read_rs1_data              ,
+    output reg         [  31:0]         read_rs2_data               
 );
 
 reg [31: 0] regs[31: 0];

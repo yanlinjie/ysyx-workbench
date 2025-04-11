@@ -77,7 +77,7 @@ extern "C" void monitor_mem_write(uint32_t addr, uint32_t data, uint32_t wtype) 
     fprintf(reg_dump,"[MEM WRITE] PC = 0x%08x, type = %s, address = 0x%08x, data = 0x%08x\n",top->rootp->top__DOT__u_riscv32__DOT__pc , type_str, addr, data);
     uint32_t oaddr = addr;
     uint32_t odata = data;
-    if (oaddr == (0xa00003f8/4)) 
+    if (oaddr == (0xa00003f8)) 
     {
       // printf("[MEM WRITE] \n");
       printf("%c", odata);//直接使用printf 打印出数据
@@ -158,9 +158,9 @@ bool isa_difftest_checkregs(CPU_state *ref_r, CPU_state *dut) {
 
 static void single_cycle() {
   top->clk = 1; top->eval();
-  // tfp->dump(main_time++);
+  tfp->dump(main_time++);
   top->clk = 0; top->eval();
-  // tfp->dump(main_time++);
+  tfp->dump(main_time++);
 
 }
 
@@ -294,11 +294,11 @@ int main(int argc, char** argv) {
   //     perror("Failed to open regdump.txt");
   //     exit(1);
   // }
-  // Verilated::traceEverOn(true);
-  // // VerilatedVcdC *tfp = new VerilatedVcdC;
-  // tfp = new VerilatedVcdC;
-  // top->trace(tfp, 99);      // 99 是层级深度
-  // tfp->open("wave.vcd");    // 波形文件名
+  Verilated::traceEverOn(true);
+  // VerilatedVcdC *tfp = new VerilatedVcdC;
+  tfp = new VerilatedVcdC;
+  top->trace(tfp, 99);      // 99 是层级深度
+  tfp->open("wave.vcd");    // 波形文件名
   welcome();
   load_bin_to_inst_mem(argv[1]);  // 在 reset 之后，仿真主循环之前
 
@@ -314,8 +314,8 @@ int main(int argc, char** argv) {
   for (int i = 0; i < 32; ++i)
     cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
 
-  // long program_size = load_program(argv[1]);
-// init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
+long program_size = load_program(argv[1]);
+init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
   int cycle_count = 0;
   while (true) {
 
@@ -323,29 +323,33 @@ int main(int argc, char** argv) {
     single_cycle();
   // 更新上一个指令
 // //debug diff
-// if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
-//     ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__pc, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
-//     cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
-//     for (int i = 0; i < 32; ++i)
-//       cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
-//     difftest_regcpy(&ref, DIFFTEST_TO_DUT);
-//     //ref 是正确端 dut是
-//     if (!isa_difftest_checkregs(&ref, &cpu)) {
-//       ring_buffer_print();  // 👈 打印 ring buffer
-//       // printf("cycle_count = %d\n", cycle_count);
-//       exit(1);
-//     }
-//     difftest_exec(1);
+if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
+    ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__pc, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
+    cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__pc;
+    for (int i = 0; i < 32; ++i)
+      cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
+    difftest_regcpy(&ref, DIFFTEST_TO_DUT);
+    //ref 是正确端 dut是
+    if (!isa_difftest_checkregs(&ref, &cpu)) {
+      ring_buffer_print();  // 👈 打印 ring buffer
+      // printf("cycle_count = %d\n", cycle_count);
+      exit(1);
+    }
+    difftest_exec(1);
 
-// }
+}
 
 prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
-
-
+printf("prev_inst = %x\n" ,prev_inst);
+  if (++cycle_count >=100)
+  {
+    // break;
   }
-  // tfp->close();
-  // delete top;
-  // delete tfp;
-  // return -1;
+  
+  }
+  tfp->close();
+  delete top;
+  delete tfp;
+  return -1;
 
 }

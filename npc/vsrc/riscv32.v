@@ -2,33 +2,53 @@ module riscv32(
     input                               clk                        ,
     input                               rst                        ,
     //读事务涉及IFU和LSU
+//IFU接口
     //AR master读地址
-    output reg         [  31:0]         raddr                      ,//  IFU(pc) or LSU
-    output reg                          arvalid                    ,//  IFU or LSU
-    input                               arready                    ,
-
+    output wire        [  31:0]         M0_raddr                   ,//  
+    output reg                          M0_arvalid                 ,// 
+    input                               M0_arready                 ,
     //R master 读数据
-    input              [  31:0]         rdata                      ,// to IFU(inst) or WBU(rd_data)
-    // input              [   1:0]         rresp                      ,//未添加
-    input                               rvalid                     ,
-    output reg                          rready                     ,
-
+    input              [  31:0]         M0_rdata                   ,// to IFU(inst) or WBU(rd_data)
+    input              [   1:0]         M0_rresp                   ,//暂时不管读数据
+    input                               M0_rvalid                  ,
+    output reg                          M0_rready                  ,
     //AW master 写地址 未完善
-    output             [  31:0]         awaddr                     ,
-    output                              awvalid                    ,
-    // input                               awready                    ,
-
+    output             [  31:0]         M0_awaddr                  ,//给0
+    output                              M0_awvalid                 ,//给0
+    input                               M0_awready                 ,//
     //W master 写数据  未完善
-    output             [  31:0]         wdata                      ,// LSU
-    output             [   3:0]         wstrb                      ,
-    output                              wvalid                     ,//  LSU
-    input                               wready                     
-    
+    output             [  31:0]         M0_wdata                   ,//给0
+    output             [   3:0]         M0_wstrb                   ,
+    output                              M0_wvalid                  ,//给0
+    input                               M0_wready                  ,//
     // // B 写回复
-    // input              [   1:0]         bresp                      ,
-    // input                               bvalid                     ,
-    // output                              bready                      
+    input              [   1:0]         M0_bresp                   ,//先不管
+    input                               M0_bvalid                  ,//先不管
+    output                              M0_bready                  ,//先不管
 
+//LSU接口
+    //AR master读地址
+    output reg         [  31:0]         M1_raddr                   ,//  IFU(pc) or LSU
+    output reg                          M1_arvalid                 ,//  IFU or LSU
+    input                               M1_arready                 ,
+    //R master 读数据
+    input              [  31:0]         M1_rdata                   ,// to IFU(inst) or WBU(rd_data)
+    input              [   1:0]         M1_rresp                   ,//暂时不管读数据
+    input                               M1_rvalid                  ,
+    output reg                          M1_rready                  ,
+    //AW master 写地址 未完善
+    output             [  31:0]         M1_awaddr                  ,
+    output                              M1_awvalid                 ,
+    input                               M1_awready                 ,
+    //W master 写数据  未完善
+    output             [  31:0]         M1_wdata                   ,// LSU
+    output             [   3:0]         M1_wstrb                   ,
+    output                              M1_wvalid                  ,//  LSU
+    input                               M1_wready                  ,
+    // // B 写回复
+    input              [   1:0]         M1_bresp                   ,//先不管
+    input                               M1_bvalid                  ,//先不管
+    output                              M1_bready                   //先不管
 );
 //握手总线信号
 wire                                    inst_valid                 ;
@@ -40,71 +60,61 @@ wire                                    read_en                    ;
 wire                   [  31:0]         next_inst                  ;
 
 wire [4:0] csr_rd_addr;
-
-always @(*) begin
-    arvalid   = 1'b0;
-    if (read_mem_falg) begin
-        raddr = (ls_read_mem_addr >>2);
-        arvalid   = ls_arvalid;
-        rready = ls_rready;
-    end else   begin
-        raddr = ((pc - 32'h80000000 )>>2);
-        arvalid   = read_en;
-        rready = if_rready;
-    end
-end
-
-//read
-reg [31:0] wb_rddata_1;
-reg [7:0] read_one_byte;
-reg [15:0] read_half_word;
-wire [1:0] read_index;
-assign  read_index= ls_read_mem_addr[1:0];
-always @(*) begin
-    case (ls_read_mem[1:0])
-        2'b00: begin //one_byte lb
-                case(read_index)
-                     2'b00: read_one_byte = rdata[7:0];
-                     2'b01: read_one_byte = rdata[15:8];
-                     2'b10: read_one_byte = rdata[23:16];
-                     2'b11: read_one_byte = rdata[31:24];
-                    default: read_one_byte = 8'b0;
-            endcase
-                    wb_rddata_1 ={ 24'd0 ,read_one_byte};//lb读取一字节后，再给wbu处理，写的有点冗余。
-        end
-        2'b01: begin //one_byte lh
-                case(read_index)
-                     2'b00: read_half_word = rdata[15:0];
-                     2'b10: read_half_word = rdata[31:16];
-                    default: read_half_word = 16'b0;
-            endcase
-                    wb_rddata_1 ={ 16'd0 ,read_half_word};//lb读取一字节后，再给wbu处理，写的有点冗余。
-        end
-        2'b10: wb_rddata_1 = rdata; 
-        default: begin
-            wb_rddata_1 = rdata;
-        end
-    endcase
-
-end
-
-//read 会存在不能被4整除的情况
-// reg [31:0] wb_rddata_1;
+localparam SRAM_addr_offset = 32'h8000_0000;
+//简易仲裁器 后续还需要update 参考讲义总线部分
 // always @(*) begin
-//     case(ls_read_mem_addr[1:0])
-//         2'b00:wb_rddata_1 = rdata;
-//         2'b01:wb_rddata_1 = {24'b0, rdata[15:8] } ;
-//         2'b10:wb_rddata_1 = {24'b0, rdata[23:16]} ;   
-//         2'b11:wb_rddata_1 = {24'b0, rdata[31:24]} ;
-//         // 2'b10:wb_rddata_1 = rdata[23:16];
-//         // 2'b11:wb_rddata_1 = rdata[31:24];
+//     M0_arvalid   = 1'b0;
+//     M1_arvalid   = 1'b0;
 
-//     endcase
+//     if (read_mem_falg) begin
+//         M1_raddr = (ls_read_mem_addr >>2);//读数据 (32'h8000_0000 - 32'h80ff_ffff)
+//         M1_arvalid   = ls_arvalid;
+//         M1_rready = ls_rready;
+//     end else   begin
+//         M0_raddr = ((pc - SRAM_addr_offset )>>2);
+//         M0_arvalid   = read_en;
+//         M0_rready = if_rready;
+//     end
 // end
 
-wire [31:0]  wb_rddata;//to wbu
-assign next_inst = rvalid? rdata : inst;//
-assign wb_rddata = rvalid? wb_rddata_1 : wb_rddata;//忘了进行对读数据拓展！！！我是sb
+// //read 这里做了读数据字节对齐
+// reg [31:0] wb_rddata_1;
+// reg [7:0] read_one_byte;
+// reg [15:0] read_half_word;
+// wire [1:0] read_index;
+// assign  read_index= ls_read_mem_addr[1:0];
+// always @(*) begin
+//     case (ls_read_mem[1:0])
+//         2'b00: begin //one_byte lb
+//                 case(read_index)
+//                      2'b00: read_one_byte = rdata[7:0];
+//                      2'b01: read_one_byte = rdata[15:8];
+//                      2'b10: read_one_byte = rdata[23:16];
+//                      2'b11: read_one_byte = rdata[31:24];
+//                     default: read_one_byte = 8'b0;
+//             endcase
+//                     wb_rddata_1 ={ 24'd0 ,read_one_byte};//lb读取一字节后，再给wbu处理，写的有点冗余。
+//         end
+//         2'b01: begin //one_byte lh
+//                 case(read_index)
+//                      2'b00: read_half_word = rdata[15:0];
+//                      2'b10: read_half_word = rdata[31:16];
+//                     default: read_half_word = 16'b0;
+//             endcase
+//                     wb_rddata_1 ={ 16'd0 ,read_half_word};//lb读取一字节后，再给wbu处理，写的有点冗余。
+//         end
+//         2'b10: wb_rddata_1 = rdata; 
+//         default: begin
+//             wb_rddata_1 = rdata;
+//         end
+//     endcase
+
+// end
+
+
+// wire [31:0]  wb_rddata;//to wbu
+// assign next_inst = rvalid? rdata : inst;//
+// assign wb_rddata = rvalid? wb_rddata_1 : wb_rddata;//忘了进行对读数据拓展！！！我是sb
 
 
 
@@ -116,17 +126,17 @@ wire                   [  31:0]         inst                       ;
 wire if_rready;
 
 // output declaration of module IFU
-
+//指令接口 ,只需要read接口即可
 IFU u_IFU(
     .clk                               (clk                       ),
     .rst                               (rst                       ),
 
-    .arready                           (arready                   ),
-    .read_en                           (read_en                   ),
-    .rready(if_rready),
-    .rvalid(rvalid),
+    .arready                           (M0_arready                ),
+    .read_en                           (M0_arvalid                ),
+    .rready                            (M0_rready                 ),
+    .rvalid                            (M0_rvalid                 ),
     .pc                                (pc                        ),
-    .next_inst                         (next_inst                 ),
+    .next_inst                         (M0_rdata                  ),
 
 
     .next_pc                           (next_pc                   ),
@@ -141,7 +151,8 @@ IFU u_IFU(
     .inst                              (inst                      ) 
 );
 
-
+assign M0_raddr = pc;
+// assign next_inst = M0_rdata;/
 
 
 
@@ -208,7 +219,7 @@ reg_file u_reg_file(
     .rs2                               (rs2_addr                  ),
     .target_reg                        (addr                      ),
     .write_rd_data                     (data                      ),
-    .reg_csr_rd_addr(csr_rd_addr),
+    .reg_csr_rd_addr                   (csr_rd_addr               ),
     .csr_data                          (csr_rd_data               ),
     .write_csr_en                      (write_csr_en              ),
 
@@ -288,14 +299,11 @@ EXU u_EXU(
     .ex_ready                          (ex_ready                  ),
     .ecall_pending                     (ecall_pending             ),//未使用
     .write_csr_en                      (write_csr_en              ),
-    .csr_rd_data                       (csr_rd_data               ) ,
-    .csr_rd_addr(csr_rd_addr)
+    .csr_rd_data                       (csr_rd_data               ),
+    .csr_rd_addr                       (csr_rd_addr               ) 
 );
 
 
-// output declaration of module LSU
-// wire ls_ready;
-// wire ls_valid;
 
 
 // output declaration of module LSU
@@ -305,7 +313,7 @@ wire                   [  31:0]         ls_rd_data                 ;
 wire                   [   1:0]         ls_write_mem               ;
 wire                   [   2:0]         ls_read_mem                ;
 wire                                    ls_write_mem_en            ;
-wire                                    ls_arvalid             ;
+wire                                    ls_arvalid                 ;
 wire                   [  31:0]         ls_mem_addr                ;
 
 
@@ -350,22 +358,27 @@ LSU u_LSU(
     .ls_rd_aluout_mem                  (ls_rd_aluout_mem          ),
 
     
-    //mem_bus
-    .arready                           (arready                   ),
-    .rvalid                            (rvalid                    ),
-    .rready                            (ls_rready                 ),
-    .arvalid                           (ls_arvalid                ),
-    .ls_read_mem_addr                  (ls_read_mem_addr          ),
+    //read 接口
+    .ls_read_mem_addr                  (M1_raddr                  ),
+    .arvalid                           (M1_arvalid                ),
+    .arready                           (M1_arready                ),
 
+    .rdata                             (M1_rdata                  ),
+    .rvalid                            (M1_rvalid                 ),
+    .rready                            (M1_rready                 ),
+    
+//
     .read_mem_falg                     (read_mem_falg             ),
+//write 接口
+    .ls_mem_data                       (M1_wdata                  ),
+    .wmask                             (M1_wstrb                  ),
+    .wready                            (M1_wready                 ),
+    .wvalid                            (M1_wvalid                 ),
 
-    .wready                            (wready                    ),
-    .wvalid                            (wvalid                    ),
-    .ls_write_mem_addr                 (awaddr                    ),
-    .awvalid(awvalid),
+    .ls_write_mem_addr                 (M1_awaddr                 ),
+    .awvalid                           (M1_awvalid                ),
+    .awready                           (M1_awready                ),
 
-    .ls_mem_data                       (wdata                     ),
-    .wmask                             (wstrb                     ),
 
     .ex_valid                          (ex_valid                  ),
     .wb_ready                          (wb_ready                  ),
@@ -375,13 +388,13 @@ LSU u_LSU(
 
 //rd_data from wb_rddata(from mem)  or alu_out
 
-wire [31:0] rd_reg_data;
-reg ls_rd_aluout_mem_1;
-//数据打拍
-always @(posedge clk ) begin
-        ls_rd_aluout_mem_1<=ls_rd_aluout_mem;
-end
-assign rd_reg_data = ls_rd_aluout_mem_1 ? wb_rddata : ls_rd_data;//判断rd reg data是来自于alu计算结果 还是 from mem 
+// wire [31:0] rd_reg_data;
+// reg ls_rd_aluout_mem_1;
+//数据打拍 //放到LSU模块当中
+// always @(posedge clk ) begin
+//         ls_rd_aluout_mem_1<=ls_rd_aluout_mem;
+// end
+// assign rd_reg_data = ls_rd_aluout_mem_1 ? wb_rddata : ls_rd_data;//判断rd reg data是来自于alu计算结果 还是 from mem 
 
 
 
@@ -402,7 +415,7 @@ WBU u_WBU(
 
     .rd_en                             (ls_write_reg              ),// input rd_en,
     .rd_addr                           (ls_rd_addr                ),// input [4:0] rd_addr,
-    .rd_data                           (rd_reg_data               ),// input [31:0] rd_data,
+    .rd_data                           (ls_rd_data                ),// input [31:0] rd_data,
     .read_mem                          (ls_read_mem               ),
 
     .en                                (en                        ),// output reg en,

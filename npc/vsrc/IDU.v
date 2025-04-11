@@ -75,11 +75,11 @@ reg [6:0] func7;
         endcase
     end
 
-reg  id_start;
-// 这里和 IDU 有点不一样, 可能三选一结构延迟比较小？
-always @(posedge clk) begin
-        id_start = (state == IDLE && pc_valid);
-end
+// reg  id_start;
+// // 这里和 IDU 有点不一样, 可能三选一结构延迟比较小？
+// always @(posedge clk) begin
+//         id_start = (state == IDLE && pc_valid);
+// end
 //还是使用组合逻辑吧！这样可以对齐时钟周期
     always @(*) begin
         //  if (id_start) begin  //当处于IDLE状态时,并且指令有效时,则在下一周期的上升沿开始译码！

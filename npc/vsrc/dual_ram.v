@@ -10,20 +10,28 @@ module dual_ram_template #(
     input  wire                         clk                        ,
     input  wire                         rst                        ,
 //读事务总线
+    input  wire        [AW-1:0]         r_addr_i                   ,
     input                               arvalid                    ,//ask read valid
     output reg                          arready                    ,//ask read ready
-    input                               rready                     ,//master 接收data ready
+
+    output reg         [DW-1:0]         r_data_o                   ,
+    output reg         [   1:0]         rresp                      ,//暂时不管读数据
     output reg                          rvalid                     ,
+    input                               rready                     ,//master 接收data ready
 
-    output wire                         wready                     ,
-    input  wire                         wen                        ,
     input  wire        [AW-1:0]         w_addr_i                   ,
-	input awvalid,
-    input  wire        [DW-1:0]         w_data_i                   ,
+    input                               awvalid                    ,
+    output                              awready                    ,
 
-    input  wire        [AW-1:0]         r_addr_i                   ,
+    input  wire        [DW-1:0]         w_data_i                   ,
     input              [   3:0]         wmask                      ,
-    output reg         [DW-1:0]         r_data_o                    
+    input  wire                         wen                        ,
+    output wire                         wready                     ,
+
+    output             [   1:0]         bresp                      ,//先不管
+    output                              bvalid                     ,//先不管
+    input                               bready                      //先不管
+
 );
 	reg[DW-1:0] memory[0:MEM_NUM-1];
 	wire [31:0] wmask_full;//wmask展开
@@ -46,6 +54,7 @@ always @(posedge clk or posedge rst) begin
 	
 end
 assign wready = 1'b1;
+assign awready = 1'b1;
 //读事务
 always @(*) begin
 	case (state)
@@ -65,9 +74,10 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;
-			if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
-			else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
-			else r_data_o = memory[r_addr];
+			// if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
+			// else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
+			// else 
+			r_data_o = memory[r_addr];
 			rvalid =1'b1;
 			next_state = READ_IDLE;
 		end 
@@ -82,7 +92,7 @@ always @(*) begin
 
 end
 
-	assign wmask_full = { {8{wmask[3]}}, {8{wmask[2]}}, {8{wmask[1]}}, {8{wmask[0]}} };
+assign wmask_full = { {8{wmask[3]}}, {8{wmask[2]}}, {8{wmask[1]}}, {8{wmask[0]}} };
 wire [AW-1:0] w_addr_i_1;
 assign w_addr_i_1 = awvalid ? w_addr_i : w_addr_i_1;
 	always @(posedge clk)begin

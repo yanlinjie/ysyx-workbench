@@ -47,11 +47,11 @@ module IFU(
                 inst_valid = 1'b0;
                 rready = 1'b1;
                 pc = next_pc;
+                read_en = 1'b1;
                 
                 if ( ~arready ) begin
                     next_state = WAIT_MEM_READY;
                 end else  begin
-                    read_en = 1'b1;
                     next_state = WAIT_READY;
                 end 
 
@@ -88,7 +88,7 @@ module IFU(
             WAIT_MEM_READY:begin
                 if (arready) begin//先等mem arready 再arvalid
                     next_state = WAIT_READY;
-                    read_en = 1'b1;
+                    // read_en = 1'b1;
                 end else next_state = WAIT_MEM_READY;
             end
             // WAIT_MEM_VALID:begin
