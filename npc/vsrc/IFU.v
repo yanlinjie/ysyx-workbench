@@ -85,11 +85,12 @@ always @(*) begin
                 end 
         end
         WAIT_MEM_READY:begin //地址握手，先valid 再检测slave 的ready 
+                    read_en = 1'b0;
+
             if (~arready) begin
                 next_state = WAIT_MEM_READY;
             end else  begin
                     rready = 1'b1;
-                    read_en = 1'b0;
                     next_state = WAIT_READY;
                     // inst_valid = rvalid;//直接把ram的valid传过来
                     // latter_pc = pc ;
