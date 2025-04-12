@@ -33,7 +33,7 @@ module LSU(
     output reg                          arvalid                    ,//arvalid
     output reg                          rready                     ,
     input                               rvalid                     ,
-input [31:0] rdata,
+    input              [  31:0]         rdata                      ,
     output reg                          read_mem_falg              ,
 
         //mem_write_bus

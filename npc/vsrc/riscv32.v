@@ -50,12 +50,13 @@ reg ifu_arready;
 always @(*) begin
     arvalid   = 1'b0;
     rready = 1'b0;
-    // lsu_rdata = 0;
-    // lsu_rvalid = 0;
-    // lsu_arready =0;
-    // ifu_rdata = 0;
-    // ifu_rvalid = 0;
-    // ifu_arready =0;
+    //下面这几行给不给0，都没啥问题
+    lsu_rdata = 0;
+    lsu_rvalid = 0;
+    lsu_arready =0;
+    ifu_rdata = 0;
+    ifu_rvalid = 0;
+    ifu_arready =0;
     if (ls_arvalid | ls_rready) begin
         raddr = ((ls_read_mem_addr - 32'h80000000 )>>2);//out
         arvalid   = ls_arvalid;//out
@@ -76,44 +77,7 @@ end
 
 
 
-//read
-reg [31:0] wb_rddata_1;
-reg [7:0] read_one_byte;
-reg [15:0] read_half_word;
-wire [1:0] read_index;
-assign  read_index= ls_read_mem_addr[1:0];
-always @(*) begin
-    case (ls_read_mem[1:0])
-        2'b00: begin //one_byte lb
-                case(read_index)
-                     2'b00: read_one_byte = lsu_rdata[7:0];
-                     2'b01: read_one_byte = lsu_rdata[15:8];
-                     2'b10: read_one_byte = lsu_rdata[23:16];
-                     2'b11: read_one_byte = lsu_rdata[31:24];
-                    default: read_one_byte = 8'b0;
-            endcase
-                    wb_rddata_1 ={ 24'd0 ,read_one_byte};//lb读取一字节后，再给wbu处理，写的有点冗余。
-        end
-        2'b01: begin //one_byte lh
-                case(read_index)
-                     2'b00: read_half_word = lsu_rdata[15:0];
-                     2'b10: read_half_word = lsu_rdata[31:16];
-                    default: read_half_word = 16'b0;
-            endcase
-                    wb_rddata_1 ={ 16'd0 ,read_half_word};//lb读取一字节后，再给wbu处理，写的有点冗余。
-        end
-        2'b10: wb_rddata_1 = lsu_rdata; 
-        default: begin
-            wb_rddata_1 = lsu_rdata;
-        end
-    endcase
-end
 
-
-
-wire [31:0]  wb_rddata;//to wbu
-assign next_inst = ifu_rvalid? ifu_rdata : inst;//
-assign wb_rddata = lsu_rvalid? wb_rddata_1 : wb_rddata;//忘了进行对读数据拓展！！！我是sb
 
 
 
@@ -130,12 +94,12 @@ IFU u_IFU(
     .clk                               (clk                       ),
     .rst                               (rst                       ),
 
-    .arready                           (ifu_arready                   ),
+    .arready                           (ifu_arready               ),
     .read_en                           (read_en                   ),
-    .rready(if_rready),
-    .rvalid(rvalid),
+    .rready                            (if_rready                 ),
+    .rvalid                            (rvalid                    ),
     .pc                                (pc                        ),
-    .next_inst                         (next_inst                 ),
+    .next_inst                         (ifu_rdata                 ),
 
 
     .next_pc                           (next_pc                   ),
@@ -174,7 +138,7 @@ wire                   [   1:0]         jump                       ;
 IDU u_IDU(
     .clk                               (clk                       ),
     .rst                               (rst                       ),
-    .pc                                (latter_pc                        ),
+    .pc                                (latter_pc                 ),
     .instruction                       (inst                      ),
 
     .pc_valid                          (inst_valid                ),
@@ -286,7 +250,7 @@ EXU u_EXU(
 
     .muxa_ctr                          (alua_rs1_pc_zero          ),
     .rs1_data                          (read_rs1_data             ),
-    .pc                                (latter_pc                        ),
+    .pc                                (latter_pc                 ),
     .muxb_ctr                          (alub_rs2_imm_4            ),
     .rs2_data                          (read_rs2_data             ),
     .imm                               (imm_32                    ),
@@ -297,7 +261,7 @@ EXU u_EXU(
     .ex_ready                          (ex_ready                  ),
     // .ecall_pending                     (ecall_pending             ),//未使用
     .write_csr_en                      (write_csr_en              ),
-    .csr_rd_data                       (csr_rd_data               ) ,
+    .csr_rd_data                       (csr_rd_data               ),
     .csr_rd_addr(csr_rd_addr)
 );
 
@@ -314,7 +278,7 @@ wire                   [  31:0]         ls_rd_data                 ;
 wire                   [   1:0]         ls_write_mem               ;
 wire                   [   2:0]         ls_read_mem                ;
 wire                                    ls_write_mem_en            ;
-wire                                    ls_arvalid             ;
+wire                                    ls_arvalid                 ;
 wire                   [  31:0]         ls_mem_addr                ;
 
 
@@ -360,11 +324,11 @@ LSU u_LSU(
 
     
     //mem_bus
-    .arready                           (lsu_arready                   ),
+    .arready                           (lsu_arready               ),
     .rvalid                            (rvalid                    ),
     .rready                            (ls_rready                 ),
     .arvalid                           (ls_arvalid                ),
-    .rdata(lsu_rdata),
+    .rdata                             (lsu_rdata                 ),
     .ls_read_mem_addr                  (ls_read_mem_addr          ),
 
     .read_mem_falg                     (read_mem_falg             ),
@@ -382,17 +346,6 @@ LSU u_LSU(
     .ls_ready                          (ls_ready                  ),
     .ls_valid                          (ls_valid                  ) 
 );
-
-//rd_data from wb_rddata(from mem)  or alu_out
-
-wire [31:0] rd_reg_data;
-reg ls_rd_aluout_mem_1;
-//数据打拍
-always @(posedge clk ) begin
-        ls_rd_aluout_mem_1<=ls_rd_aluout_mem;
-end
-// assign rd_reg_data = ls_rd_aluout_mem_1 ? wb_rddata : ls_rd_data;//判断rd reg data是来自于alu计算结果 还是 from mem 
-assign rd_reg_data =  ls_rd_data;//判断rd reg data是来自于alu计算结果 还是 from mem 
 
 
 
@@ -413,7 +366,7 @@ WBU u_WBU(
 
     .rd_en                             (ls_write_reg              ),// input rd_en,
     .rd_addr                           (ls_rd_addr                ),// input [4:0] rd_addr,
-    .rd_data                           (rd_reg_data               ),// input [31:0] rd_data,
+    .rd_data                           (ls_rd_data               ),// input [31:0] rd_data,
     .read_mem                          (ls_read_mem               ),
 
     .en                                (en                        ),// output reg en,
