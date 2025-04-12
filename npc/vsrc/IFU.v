@@ -90,15 +90,16 @@ always @(*) begin
             end else  begin
                     rready = 1'b1;
                     read_en = 1'b0;
-                    inst_valid = rvalid;//直接把ram的valid传过来
-                    latter_pc = pc ;
-                if(rvalid)begin
-                    inst = next_inst;
-                    if (id_ready) begin next_state = IDLE ; //握手成功后在下一状态拉低
-                    end else next_state = WAIT_READY;
-                end else begin 
                     next_state = WAIT_READY;
-                end 
+                    // inst_valid = rvalid;//直接把ram的valid传过来
+                    // latter_pc = pc ;
+                // if(rvalid)begin
+                //     inst = next_inst;
+                //     if (id_ready) begin next_state = IDLE ; //握手成功后在下一状态拉低
+                //     end else next_state = WAIT_READY;
+                // end else begin 
+                //     next_state = WAIT_READY;
+                // end 
             end  
 
         end

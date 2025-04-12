@@ -51,12 +51,12 @@ always @(*) begin
     arvalid   = 1'b0;
     rready = 1'b0;
     //下面这几行给不给0，都没啥问题
-    lsu_rdata = 0;
-    lsu_rvalid = 0;
-    lsu_arready =0;
-    ifu_rdata = 0;
-    ifu_rvalid = 0;
-    ifu_arready =0;
+    // lsu_rdata = 0;
+    // lsu_rvalid = 0;
+    // lsu_arready =0;
+    // ifu_rdata = 0;
+    // ifu_rvalid = 0;
+    // ifu_arready =0;
     if (ls_arvalid | ls_rready) begin
         araddr = ((ls_read_mem_addr - 32'h80000000 )>>2);//out
         arvalid   = ls_arvalid;//out
