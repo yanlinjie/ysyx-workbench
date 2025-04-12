@@ -31,21 +31,21 @@ module dual_ram_template #(
 
 
 );
-reg                    [AW-1:0]         r_addr_i_1                 ;
-reg                    [AW-1:0]         r_addr_i_2                 ;
-reg                    [AW-1:0]         r_addr_i_3                 ;
+// reg                    [AW-1:0]         r_addr_i_1                 ;
+// reg                    [AW-1:0]         r_addr_i_2                 ;
+// reg                    [AW-1:0]         r_addr_i_3                 ;
 
-reg                                     arvalid_1                  ;
-reg                                     arvalid_2                  ;
-reg                                     arvalid_3                  ;
+// reg                                     arvalid_1                  ;
+// reg                                     arvalid_2                  ;
+// reg                                     arvalid_3                  ;
 
 
 reg[DW-1:0] memory[0:MEM_NUM-1];
 wire [31:0] wmask_full;//wmask展开
 
 
-wire    [AW-1:0]   r_addr_i_d3;
-wire       arvalid_d3;
+// wire    [AW-1:0]   r_addr_i_d3;
+// wire       arvalid_d3;
 
 localparam READ_IDLE = 2'b00 ;
 localparam MASTER_READ_DATA = 2'b01;
@@ -67,10 +67,25 @@ always @(posedge clk or posedge rst) begin
 		state <= next_state; 
 		write_state <= write_next_state;
 	end
-
-	
 end
-// assign wready = 1'b1;
+
+reg [10:0] cnt ;
+wire  [10:0] cnt_1 ;
+
+//test
+always @(posedge clk or posedge rst) begin
+  if (rst)
+    cnt <= 0;
+  else if (arvalid && cnt < 10)
+    cnt <= cnt + 1;
+  else if (state == MASTER_READ_DATA && rready)
+    cnt <= 0;  // 成功传输后重置
+end
+
+// always @(*) begin
+// 	cnt_1 = cnt;
+// end
+
 //读事务
 always @(*) begin
 	case (state)
@@ -78,10 +93,12 @@ always @(*) begin
 			arready = 1'b0;
 			rvalid =1'b0;
 			// rvalid_1 =1'b0;	
-			if(arvalid_3) begin
-				r_addr = r_addr_i_3;//master 读地址有效，寄存地址
-				arready = 1'b1;
-				next_state = MASTER_READ_DATA; 
+			if(arvalid && cnt == 10) begin
+				// if(cnt == 10) begin
+					r_addr = r_addr_i;//master 读地址有效，寄存地址
+					arready = 1'b1;
+					next_state = MASTER_READ_DATA; 
+				// end
 			end 
 			else next_state = READ_IDLE;
 		end 
@@ -154,29 +171,29 @@ end
 
 //测试总线 打拍延迟
 //读地址通道 
-always @(posedge clk) begin
+// always @(posedge clk) begin
 
-	if(rst) begin
-		r_addr_i_1<=0;
-		r_addr_i_2<=0;
-		r_addr_i_3<=0;
+// 	if(rst) begin
+// 		r_addr_i_1<=0;
+// 		r_addr_i_2<=0;
+// 		r_addr_i_3<=0;
 
-		arvalid_1 <=0;
-		arvalid_2 <=0;
-		arvalid_3 <=0;
+// 		arvalid_1 <=0;
+// 		arvalid_2 <=0;
+// 		arvalid_3 <=0;
 
-	end
-	else begin
-		r_addr_i_1 <= r_addr_i;
-		r_addr_i_2 <= r_addr_i_1;
-		r_addr_i_3 <= r_addr_i_2;
+// 	end
+// 	else begin
+// 		r_addr_i_1 <= r_addr_i;
+// 		r_addr_i_2 <= r_addr_i_1;
+// 		r_addr_i_3 <= r_addr_i_2;
 
-		arvalid_1  <= arvalid;
-		arvalid_2  <= arvalid_1;
-		arvalid_3  <= arvalid_2;
+// 		arvalid_1  <= arvalid;
+// 		arvalid_2  <= arvalid_1;
+// 		arvalid_3  <= arvalid_2;
 
-	end
-end
+// 	end
+// end
 
 
 

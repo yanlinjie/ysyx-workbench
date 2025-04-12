@@ -125,8 +125,8 @@ always @(*) begin
         end
 
         WAIT_MEM_READY: begin
-                arvalid = 1'b0;//握手成功后。置低电平
             if (arready) begin
+                // arvalid = 1'b0;//握手成功后。置低电平 //得在下一时钟周期拉低有效信号
                 ls_read_mem_addr = mem_addr;
                 next_state = WAIT_MEM_DATA_VALID;//执行模块ready后，跳转至wait_input状态
             end else next_state = WAIT_MEM_READY;
