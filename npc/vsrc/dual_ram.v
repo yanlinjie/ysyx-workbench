@@ -33,12 +33,19 @@ module dual_ram_template #(
 );
 reg                    [AW-1:0]         r_addr_i_1                 ;
 reg                    [AW-1:0]         r_addr_i_2                 ;
+reg                    [AW-1:0]         r_addr_i_3                 ;
+
 reg                                     arvalid_1                  ;
 reg                                     arvalid_2                  ;
+reg                                     arvalid_3                  ;
+
 
 reg[DW-1:0] memory[0:MEM_NUM-1];
 wire [31:0] wmask_full;//wmask展开
 
+
+wire    [AW-1:0]   r_addr_i_d3;
+wire       arvalid_d3;
 
 localparam READ_IDLE = 2'b00 ;
 localparam MASTER_READ_DATA = 2'b01;
@@ -71,8 +78,8 @@ always @(*) begin
 			arready = 1'b0;
 			rvalid =1'b0;
 			// rvalid_1 =1'b0;	
-			if(arvalid_d3) begin
-				r_addr = r_addr_i_d3;//master 读地址有效，寄存地址
+			if(arvalid_3) begin
+				r_addr = r_addr_i_3;//master 读地址有效，寄存地址
 				arready = 1'b1;
 				next_state = MASTER_READ_DATA; 
 			end 
@@ -147,50 +154,55 @@ end
 
 //测试总线 打拍延迟
 //读地址通道 
-// always @(posedge clk) begin
+always @(posedge clk) begin
 
-// 	if(rst) begin
-// 		r_addr_i_1<=0;
-// 		r_addr_i_2<=0;
-// 		arvalid_1 <=0;
-// 		arvalid_2 <=0;
-// 	end
-// 	else begin
-// 		r_addr_i_1 <= r_addr_i;
-// 		r_addr_i_2 <= r_addr_i_1;
+	if(rst) begin
+		r_addr_i_1<=0;
+		r_addr_i_2<=0;
+		r_addr_i_3<=0;
 
-// 		arvalid_1  <= arvalid;
-// 		arvalid_2  <= arvalid_1;
-// 	end
-// end
+		arvalid_1 <=0;
+		arvalid_2 <=0;
+		arvalid_3 <=0;
 
-wire [2:0] arvalid_pipe;
-wire       arvalid_d3;
+	end
+	else begin
+		r_addr_i_1 <= r_addr_i;
+		r_addr_i_2 <= r_addr_i_1;
+		r_addr_i_3 <= r_addr_i_2;
 
-delay_pipeline #(
-    .WIDTH(1),
-    .STAGES(3)
-) arvalid_delay_inst (
-    .clk(clk),
-    .rst(rst),
-    .din(arvalid),
-    .dout(arvalid_d3)         // arvalid 第 3 拍输出
+		arvalid_1  <= arvalid;
+		arvalid_2  <= arvalid_1;
+		arvalid_3  <= arvalid_2;
 
-);
+	end
+end
 
-wire [2:0] r_addr_i_pipe;
-wire       r_addr_i_d3;
 
-delay_pipeline #(
-    .WIDTH(32),
-    .STAGES(3)
-) r_addr_i_delay_inst (
-    .clk(clk),
-    .rst(rst),
-    .din(r_addr_i),
-    .dout(r_addr_i_d3)         // r_addr_i 第 3 拍输出
 
-);
+// delay_pipeline #(
+//     .WIDTH(1),
+//     .STAGES(3)
+// ) arvalid_delay_inst (
+//     .clk(clk),
+//     .rst(rst),
+//     .din(arvalid),
+//     .dout(arvalid_d3)         // arvalid 第 3 拍输出
+
+// );
+
+
+
+// delay_pipeline #(
+//     .WIDTH(32),
+//     .STAGES(3)
+// ) r_addr_i_delay_inst (
+//     .clk(clk),
+//     .rst(rst),
+//     .din(r_addr_i),
+//     .dout(r_addr_i_d3)         // r_addr_i 第 3 拍输出
+
+// );
 
 
 
