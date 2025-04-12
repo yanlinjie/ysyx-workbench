@@ -1,6 +1,6 @@
 
-import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
-import "DPI-C" function int pmem_read(input int raddr);
+// import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
+// import "DPI-C" function int pmem_read(input int raddr);
 module dual_ram_template #(
 	parameter DW = 32,
 	parameter AW = 32,
@@ -65,9 +65,10 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;
-			if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
-			else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
-			else r_data_o = memory[r_addr];
+			// if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
+			// else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
+			// else 
+			r_data_o = memory[r_addr];
 			//  $display( "r_data_o = %h  r_addr = %h", r_data_o, r_addr);
 			rvalid =1'b1;
 			next_state = READ_IDLE;
@@ -90,8 +91,9 @@ assign w_addr_i_1 = awvalid ? w_addr_i : w_addr_i_1;
 	always @(posedge clk)begin
 		if(~rst && wen)
 		begin
-			if(w_addr_i == 32'h80000fe)
-				monitor_mem_write(w_addr_i, w_data_i, 0);  
+			if(w_addr_i == 32'h80000fe)begin
+				// monitor_mem_write(w_addr_i, w_data_i, 0);  
+			end
 			else
 			memory[w_addr_i] <= (w_data_i & wmask_full) | ( memory[w_addr_i] & ~wmask_full );
 		end
