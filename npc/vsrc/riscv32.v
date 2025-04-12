@@ -22,7 +22,7 @@ module riscv32(
     output             [  31:0]         wdata                      ,// LSU
     output             [   3:0]         wstrb                      ,
     output                              wvalid                     ,//  LSU
-    input                               wready                     
+    input                               wready                      
     
     // // B 写回复
     // input              [   1:0]         bresp                      ,
@@ -40,18 +40,30 @@ wire                                    read_en                    ;
 wire                   [  31:0]         next_inst                  ;
 
 wire [4:0] csr_rd_addr;
+reg [31:0] lsu_rdata;
+reg [31:0] ifu_rdata;
+reg lsu_rvalid;
+reg ifu_rvalid;
+reg lsu_arready;
+reg ifu_arready;
 
 always @(*) begin
     arvalid   = 1'b0;
     rready = 1'b0;
     if (ls_arvalid | ls_rready) begin
-        raddr = ((ls_read_mem_addr - 32'h80000000 )>>2);
-        arvalid   = ls_arvalid;
-        rready = ls_rready;
+        raddr = ((ls_read_mem_addr - 32'h80000000 )>>2);//out
+        arvalid   = ls_arvalid;//out
+        rready = ls_rready;//out
+        lsu_rdata = rdata;//in
+        lsu_rvalid = rvalid;//in
+        lsu_arready = arready;
     end else if(read_en | if_rready)  begin
         raddr = ((pc - 32'h80000000 )>>2);
         arvalid   = read_en;
         rready = if_rready;
+        ifu_rdata = rdata;
+        ifu_rvalid = rvalid;
+        ifu_arready = arready;
     end 
 end
 
@@ -74,25 +86,25 @@ always @(*) begin
     case (ls_read_mem[1:0])
         2'b00: begin //one_byte lb
                 case(read_index)
-                     2'b00: read_one_byte = rdata[7:0];
-                     2'b01: read_one_byte = rdata[15:8];
-                     2'b10: read_one_byte = rdata[23:16];
-                     2'b11: read_one_byte = rdata[31:24];
+                     2'b00: read_one_byte = lsu_rdata[7:0];
+                     2'b01: read_one_byte = lsu_rdata[15:8];
+                     2'b10: read_one_byte = lsu_rdata[23:16];
+                     2'b11: read_one_byte = lsu_rdata[31:24];
                     default: read_one_byte = 8'b0;
             endcase
                     wb_rddata_1 ={ 24'd0 ,read_one_byte};//lb读取一字节后，再给wbu处理，写的有点冗余。
         end
         2'b01: begin //one_byte lh
                 case(read_index)
-                     2'b00: read_half_word = rdata[15:0];
-                     2'b10: read_half_word = rdata[31:16];
+                     2'b00: read_half_word = lsu_rdata[15:0];
+                     2'b10: read_half_word = lsu_rdata[31:16];
                     default: read_half_word = 16'b0;
             endcase
                     wb_rddata_1 ={ 16'd0 ,read_half_word};//lb读取一字节后，再给wbu处理，写的有点冗余。
         end
-        2'b10: wb_rddata_1 = rdata; 
+        2'b10: wb_rddata_1 = lsu_rdata; 
         default: begin
-            wb_rddata_1 = rdata;
+            wb_rddata_1 = lsu_rdata;
         end
     endcase
 
@@ -101,8 +113,8 @@ end
 
 
 wire [31:0]  wb_rddata;//to wbu
-assign next_inst = rvalid? rdata : inst;//
-assign wb_rddata = rvalid? wb_rddata_1 : wb_rddata;//忘了进行对读数据拓展！！！我是sb
+assign next_inst = ifu_rvalid? ifu_rdata : inst;//
+assign wb_rddata = lsu_rvalid? wb_rddata_1 : wb_rddata;//忘了进行对读数据拓展！！！我是sb
 
 
 
@@ -119,7 +131,7 @@ IFU u_IFU(
     .clk                               (clk                       ),
     .rst                               (rst                       ),
 
-    .arready                           (arready                   ),
+    .arready                           (ifu_arready                   ),
     .read_en                           (read_en                   ),
     .rready(if_rready),
     .rvalid(rvalid),
@@ -349,7 +361,7 @@ LSU u_LSU(
 
     
     //mem_bus
-    .arready                           (arready                   ),
+    .arready                           (lsu_arready                   ),
     .rvalid                            (rvalid                    ),
     .rready                            (ls_rready                 ),
     .arvalid                           (ls_arvalid                ),
@@ -360,7 +372,7 @@ LSU u_LSU(
     .wready                            (wready                    ),
     .wvalid                            (wvalid                    ),
     .ls_write_mem_addr                 (awaddr                    ),
-    .awvalid(awvalid),
+    .awvalid                           (awvalid                   ),
 
     .ls_mem_data                       (wdata                     ),
     .wmask                             (wstrb                     ),

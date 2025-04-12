@@ -59,27 +59,23 @@ always @(*) begin
                 pc = next_pc;//mem's addr   
                 read_en = 1'b1;//同时拉高valid 和接收ready
                 rready = 1'b1;
-                next_state = WAIT_READY;              
-            if(~arready) //如果slave 没有准备好 则等待slave准备
-                next_state = WAIT_MEM_READY;
+                if(~arready) //如果slave 没有准备好 则等待slave准备
+                    next_state = WAIT_MEM_READY;
+                    else  next_state = WAIT_READY;              
             end else if(jump_flag) begin
                     read_en = 1'b1;
                     rready = 1'b1;
                     pc = jump_pc;
-                    next_state = WAIT_READY;
-            if(~arready) //如果slave 没有准备好 则等待slave准备
-                next_state = WAIT_MEM_READY;
+                    if(~arready) //如果slave 没有准备好 则等待slave准备
+                        next_state = WAIT_MEM_READY;
+                    else next_state = WAIT_READY;
             end else next_state = IDLE;
         end
         WAIT_READY:begin
-            // if(~arready) //如果slave 没有准备好 则等待slave准备
-            //     next_state = WAIT_MEM_READY;
-            // else 
-            begin
                     rready = 1'b1;
                     read_en = 1'b0;
                     inst_valid = rvalid;//直接把ram的valid传过来
-                    latter_pc = pc ;
+                    latter_pc = pc ; //inst 和 pc同步
                 if(rvalid)begin
                     inst = next_inst;
                     if (id_ready) begin next_state = IDLE ; //握手成功后在下一状态拉低
@@ -87,13 +83,11 @@ always @(*) begin
                 end else begin 
                     next_state = WAIT_READY;
                 end 
-            end   
-
         end
         WAIT_MEM_READY:begin //地址握手，先valid 再检测slave 的ready 
             if (~arready) begin
                 next_state = WAIT_MEM_READY;
-            end begin
+            end else  begin
                     rready = 1'b1;
                     read_en = 1'b0;
                     inst_valid = rvalid;//直接把ram的valid传过来

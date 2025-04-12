@@ -93,14 +93,11 @@ always @(*) begin
             ls_valid = 1'b0;
             if (ex_valid ) begin
                 if (read_mem_en) begin  //如果不需要读数据，也不需要写数据 下一状态直接跳转至WAIT_MEM_READY
+                    rready = 1'b1;//同时拉高 读地址有效和接收数据准备好(这里我提前拉高了该信号)
                     arvalid = 1'b1;//en
-                    rready = 1'b1;//同时拉高 读地址有效和接收数据准备好
-                    if ( ~ arready ) begin
-                         next_state = WAIT_MEM_READY;
-                    end else begin
-                        next_state = WAIT_MEM_DATA_VALID;//执行模块ready后，跳转至wait_input状态
-                        ls_read_mem_addr = mem_addr;
-                    end 
+                    ls_read_mem_addr = mem_addr;
+                    if ( ~ arready )  next_state = WAIT_MEM_READY;
+                    else next_state = WAIT_MEM_DATA_VALID;//执行模块ready后，跳转至wait_input状态
                 end else if (write_mem_en) begin
                     if ( ~ wready) begin
                         next_state = WAIT_MEM_WRITE_READY;    
@@ -136,11 +133,9 @@ always @(*) begin
         end
 
         WAIT_MEM_DATA_VALID: begin
+                arvalid = 1'b0;//握手成功后。置低电平
                 if (rvalid) begin
-                    arvalid = 1'b0;//握手成功后。置低电平
                     ls_valid = rvalid;//
-                    ls_read_mem_addr = mem_addr;
-
                     if (wb_ready) next_state = IDLE;                    
                     else next_state = WAIT_MEM_DATA_VALID; 
                 end else next_state = WAIT_MEM_DATA_VALID;
