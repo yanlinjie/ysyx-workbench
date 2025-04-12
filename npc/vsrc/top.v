@@ -20,6 +20,15 @@ wire                                    awready                    ;
 wire                   [   1:0]         bresp                      ;
 wire                                    bvalid                     ;
 wire                                    bready                     ;
+wire                                    rready                     ;
+wire                                    arready                    ;
+wire                                    arvalid                    ;
+wire                                    rvalid                     ;
+wire                                    wen                        ;
+// wire                   [  31:0]         w_addr_i                   ;
+// wire                   [  31:0]         w_data_i                   ;
+// wire                   [  31:0]         r_addr_i                   ;
+// wire                   [  31:0]         r_data_o                   ;
 
 riscv32 u_riscv32(
     .clk                               (clk                       ),
@@ -55,20 +64,7 @@ riscv32 u_riscv32(
 
 
 // output declaration of module dual_ram_template
-wire                                    rready                     ;
-wire                                    arready                    ;
-wire                                    arvalid                    ;
-wire                                    rvalid                     ;
 
-
-wire                                    wen                        ;
-
-
-wire                   [  31:0]         w_addr_i                   ;
-wire                   [  31:0]         w_data_i                   ;
-
-wire                   [  31:0]         r_addr_i                   ;
-wire                   [  31:0]         r_data_o                   ;
 
 dual_ram_template #(
     .DW                                (32                        ),

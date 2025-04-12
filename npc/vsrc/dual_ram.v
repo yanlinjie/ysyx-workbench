@@ -32,10 +32,10 @@ module dual_ram_template #(
 
 
 );
-	reg[DW-1:0] memory[0:MEM_NUM-1];
-	wire [31:0] wmask_full;//wmask展开
 
 
+reg[DW-1:0] memory[0:MEM_NUM-1];
+wire [31:0] wmask_full;//wmask展开
 
 
 localparam READ_IDLE = 2'b00 ;
@@ -142,6 +142,9 @@ end
 		end
 
 	end
+
+
+
 
 
 
