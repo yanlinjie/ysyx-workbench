@@ -48,50 +48,65 @@ always @(*) begin
             rready = 1'b1;       //master read ready
             read_en = 1'b1;     //valid 
             pc = next_pc;       //addr
-            if ( ~arready ) begin
+            next_state = WAIT_READY;
+            if(~arready) //如果slave 没有准备好 则等待slave准备
                 next_state = WAIT_MEM_READY;
-            end else  begin
-                next_state = WAIT_READY;
-            end 
         end
         IDLE : begin
                 rready = 1'b0;
-                // read_en = 1'b0;  
                 inst_valid = 1'b0;          
             if (down) begin  //由于wbu 过来的down只有一个时钟周期，所以设置了一个WAIT_MEM_READY状态
-                pc = next_pc;//mem's addr
-                if ( ~arready ) begin
-                    next_state = WAIT_MEM_READY;
-                end else  begin
-                    read_en = 1'b1;//同时拉高valid 和接收ready
-                    rready = 1'b1;
-                    next_state = WAIT_READY;
-                end 
+                pc = next_pc;//mem's addr   
+                read_en = 1'b1;//同时拉高valid 和接收ready
+                rready = 1'b1;
+                next_state = WAIT_READY;              
+            if(~arready) //如果slave 没有准备好 则等待slave准备
+                next_state = WAIT_MEM_READY;
             end else if(jump_flag) begin
                     read_en = 1'b1;
                     rready = 1'b1;
                     pc = jump_pc;
                     next_state = WAIT_READY;
+            if(~arready) //如果slave 没有准备好 则等待slave准备
+                next_state = WAIT_MEM_READY;
             end else next_state = IDLE;
         end
         WAIT_READY:begin
-            rready = 1'b1;
-            read_en = 1'b0;//目前读一个时钟周期就够了
-            inst_valid = rvalid;//直接把ram的valid传过来
-            inst = next_inst;
-            latter_pc = pc ;
-            if(rvalid)begin
-                if (id_ready) begin next_state = IDLE ; //握手成功后在下一状态拉低
-                end else next_state = WAIT_READY;
-            end else begin //这里就WAIT_MEM_VALID不设置状态了，不知道会不会有隐藏bug 这里通过if语句的优先级来执行
-                next_state = WAIT_READY;
-            end 
+            // if(~arready) //如果slave 没有准备好 则等待slave准备
+            //     next_state = WAIT_MEM_READY;
+            // else 
+            begin
+                    rready = 1'b1;
+                    read_en = 1'b0;
+                    inst_valid = rvalid;//直接把ram的valid传过来
+                    latter_pc = pc ;
+                if(rvalid)begin
+                    inst = next_inst;
+                    if (id_ready) begin next_state = IDLE ; //握手成功后在下一状态拉低
+                    end else next_state = WAIT_READY;
+                end else begin 
+                    next_state = WAIT_READY;
+                end 
+            end   
+
         end
         WAIT_MEM_READY:begin //地址握手，先valid 再检测slave 的ready 
-            if (arready) begin
-                next_state = WAIT_READY;
-                read_en = 1'b1; //握手成功后，下一状态拉低使能
-            end else next_state = WAIT_MEM_READY;
+            if (~arready) begin
+                next_state = WAIT_MEM_READY;
+            end begin
+                    rready = 1'b1;
+                    read_en = 1'b0;
+                    inst_valid = rvalid;//直接把ram的valid传过来
+                    latter_pc = pc ;
+                if(rvalid)begin
+                    inst = next_inst;
+                    if (id_ready) begin next_state = IDLE ; //握手成功后在下一状态拉低
+                    end else next_state = WAIT_READY;
+                end else begin 
+                    next_state = WAIT_READY;
+                end 
+            end  
+
         end
         default:
             next_state = IDLE ;

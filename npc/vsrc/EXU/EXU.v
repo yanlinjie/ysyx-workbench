@@ -1,4 +1,4 @@
-import "DPI-C" function void dpi_exit_simulation();
+// import "DPI-C" function void dpi_exit_simulation();
 
 module EXU(
     input                               clk                        ,
@@ -197,7 +197,7 @@ always @(*) begin
                     next_state = IDLE;
                 end 
                 else begin  // ebreak
-                    dpi_exit_simulation();
+                    // dpi_exit_simulation();
                 end
             end
             else if (alu_ctr == 5'b10101) begin  // mret

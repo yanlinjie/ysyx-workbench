@@ -1,6 +1,6 @@
 
-import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
-import "DPI-C" function int pmem_read(input int raddr);
+// import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
+// import "DPI-C" function int pmem_read(input int raddr);
 module dual_ram_template #(
 	parameter DW = 32,
 	parameter AW = 32,
@@ -31,8 +31,6 @@ module dual_ram_template #(
 
 
 
-
-
 localparam READ_IDLE = 2'b00 ;
 localparam MASTER_READ_DATA = 2'b01;
 localparam WAIT_MASTER_READY = 2'b10;
@@ -50,32 +48,28 @@ assign wready = 1'b1;
 always @(*) begin
 	case (state)
 		READ_IDLE: begin
-			arready = 1'b1;
+			arready = 1'b0;
 			rvalid =1'b0;
 			// rvalid_1 =1'b0;	
 			if(arvalid) begin
 				r_addr = r_addr_i;//master 读地址有效，寄存地址
-				if ( ~ rready) begin
-					next_state = WAIT_MASTER_READY;
-				end else begin
-					next_state = MASTER_READ_DATA; //如果master 的 addr有效（en） 且master接收数据ready 则发送输出，数据会在下一时钟周期输出
-				end
+				arready = 1'b1;
+				next_state = MASTER_READ_DATA; 
 			end else next_state = READ_IDLE;
 		end 
 
 		MASTER_READ_DATA: begin
-			arready = 1'b0;
-			if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
-			else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
-			else r_data_o = memory[r_addr];
-			//  $display( "r_data_o = %h  r_addr = %h", r_data_o, r_addr);
-			rvalid =1'b1;
-			next_state = READ_IDLE;
-		end 
-
-		WAIT_MASTER_READY: begin
-			if(rready) next_state = MASTER_READ_DATA;
-			else next_state = WAIT_MASTER_READY;
+			arready = 1'b0;//slave 拉低接收地址ready信号
+			// if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
+			// else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
+			// else 
+			r_data_o = memory[r_addr];
+			rvalid =1'b1;// 拉高数据有效信号
+			if (rready) begin //等待data握手
+					next_state = READ_IDLE;
+				end else begin
+					next_state = MASTER_READ_DATA; //如果master 的 addr有效（en） 且master接收数据ready 则发送输出，数据会在下一时钟周期输出
+				end
 		end 
 		default: begin
 		end
@@ -90,8 +84,9 @@ assign w_addr_i_1 = awvalid ? w_addr_i : w_addr_i_1;
 	always @(posedge clk)begin
 		if(~rst && wen)
 		begin
-			if(w_addr_i == 32'h80000fe)
-				monitor_mem_write(w_addr_i, w_data_i, 0);  
+			if(w_addr_i == 32'h80000fe)begin
+			end
+				// monitor_mem_write(w_addr_i, w_data_i, 0);  
 			else
 			memory[w_addr_i] <= (w_data_i & wmask_full) | ( memory[w_addr_i] & ~wmask_full );
 		end

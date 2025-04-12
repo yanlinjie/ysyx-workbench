@@ -43,16 +43,26 @@ wire [4:0] csr_rd_addr;
 
 always @(*) begin
     arvalid   = 1'b0;
-    if (ls_arvalid) begin
+    rready = 1'b0;
+    if (ls_arvalid | ls_rready) begin
         raddr = ((ls_read_mem_addr - 32'h80000000 )>>2);
         arvalid   = ls_arvalid;
         rready = ls_rready;
-    end else   begin
+    end else if(read_en | if_rready)  begin
         raddr = ((pc - 32'h80000000 )>>2);
         arvalid   = read_en;
         rready = if_rready;
-    end
+    end 
 end
+
+
+
+
+
+
+
+
+
 
 //read
 reg [31:0] wb_rddata_1;
