@@ -3,31 +3,31 @@ module riscv32(
     input                               rst                        ,
     //读事务涉及IFU和LSU
     //AR master读地址
-    output reg         [  31:0]         raddr                      ,//  IFU(pc) or LSU
+    output reg         [  31:0]         araddr                      ,//  IFU(pc) or LSU
     output reg                          arvalid                    ,//  IFU or LSU
     input                               arready                    ,
 
     //R master 读数据
     input              [  31:0]         rdata                      ,// to IFU(inst) or WBU(rd_data)
-    // input              [   1:0]         rresp                      ,//未添加
+    input              [   1:0]         rresp                      ,//未添加
     input                               rvalid                     ,
     output reg                          rready                     ,
 
     //AW master 写地址 未完善
     output             [  31:0]         awaddr                     ,
     output                              awvalid                    ,
-    // input                               awready                    ,
+    input                               awready                    ,//未添加
 
     //W master 写数据  未完善
     output             [  31:0]         wdata                      ,// LSU
     output             [   3:0]         wstrb                      ,
     output                              wvalid                     ,//  LSU
-    input                               wready                      
+    input                               wready                     ,
     
     // // B 写回复
-    // input              [   1:0]         bresp                      ,
-    // input                               bvalid                     ,
-    // output                              bready                      
+    input              [   1:0]         bresp                      ,//未添加
+    input                               bvalid                     ,//未添加
+    output                              bready                      //未添加
 
 );
 //握手总线信号
@@ -58,14 +58,14 @@ always @(*) begin
     ifu_rvalid = 0;
     ifu_arready =0;
     if (ls_arvalid | ls_rready) begin
-        raddr = ((ls_read_mem_addr - 32'h80000000 )>>2);//out
+        araddr = ((ls_read_mem_addr - 32'h80000000 )>>2);//out
         arvalid   = ls_arvalid;//out
         rready = ls_rready;//out
         lsu_rdata = rdata;//in
         lsu_rvalid = rvalid;//in
         lsu_arready = arready;
     end else if(read_en | if_rready)  begin
-        raddr = ((pc - 32'h80000000 )>>2);
+        araddr = ((pc - 32'h80000000 )>>2);
         arvalid   = read_en;
         rready = if_rready;
         ifu_rdata = rdata;
@@ -110,7 +110,7 @@ IFU u_IFU(
     .imm                               (ex_imm                    ),// input [31:0] imm,
     .inst_valid                        (inst_valid                ),
 
-.latter_pc(latter_pc),
+    .latter_pc                         (latter_pc                 ),
     .inst                              (inst                      ) 
 );
 

@@ -14,26 +14,41 @@ wire                   [  31:0]         wdata                      ;
 wire                   [  31:0]         raddr                      ;
 wire                   [  31:0]         rdata                      ;
 wire                                    wready                     ;
-wire awvalid;
+wire                   [   1:0]         rresp                      ;
+wire                                    awvalid                    ;
+wire                                    awready                    ;
+wire                   [   1:0]         bresp                      ;
+wire                                    bvalid                     ;
+wire                                    bready                     ;
+
 riscv32 u_riscv32(
     .clk                               (clk                       ),
     .rst                               (rst                       ),
 
-    .wready                            (wready                    ),
-    .wstrb                             (wmask                     ),
-    .wvalid                            (wen                       ),
-    .awaddr                            (waddr                     ),
-    .awvalid(awvalid),
-    .wdata                             (wdata                     ),
-
-
-//读事务bus
-    .rready                            (rready                    ),//     output                              rready                     ,
-    .rvalid                            (rvalid                    ),// input                               rvalid                     ,
+    .araddr                            (raddr                     ),
     .arvalid                           (arvalid                   ),//arvalid
     .arready                           (arready                   ),//arready
-    .raddr                             (raddr                     ),
-    .rdata                             (rdata                     ) 
+
+    .rdata                             (rdata                     ),
+    .rresp                             (rresp                     ),
+    .rvalid                            (rvalid                    ),// input                               rvalid                     ,
+    .rready                            (rready                    ),//     output                              rready                     ,
+
+    .awaddr                            (waddr                     ),
+    .awvalid                           (awvalid                   ),
+    .awready                           (awready                   ),
+
+    .wdata                             (wdata                     ),
+    .wstrb                             (wmask                     ),
+    .wvalid                            (wen                       ),
+    .wready                            (wready                    ),
+    
+    .bresp                             (bresp                     ),
+    .bvalid                            (bvalid                    ),
+    .bready                            (bready                    ) 
+
+
+
 );
 
 
@@ -67,20 +82,24 @@ u_dual_ram_template(
     .rst                               (rst                       ),
 
 //读事务总线
+    .r_addr_i                          (raddr                     ),
     .arvalid                           (arvalid                   ),
     .arready                           (arready                   ),
-    .rready                            (rready                    ),// input 	rready,//master 接收data ready
+
+    .r_data_o                          (rdata                     ),
+    .rresp                             (rresp                     ),
     .rvalid                            (rvalid                    ),// output reg rvalid,
+    .rready                            (rready                    ),// input 	rready,//master 接收data ready
 
-    .wready                            (wready                    ),
-    .wen                               (wen                       ),
     .w_addr_i                          (waddr                     ),
-    .awvalid(awvalid),
+    .awvalid                           (awvalid                   ),
+    .awready                           (awready                   ),
+    
     .w_data_i                          (wdata                     ),
-
-    .r_addr_i                          (raddr                     ),
     .wmask                             (wmask                     ),
-    .r_data_o                          (rdata                     ) 
+    .wen                               (wen                       ),
+    .wready                            (wready                    ) 
+
 );
 
 

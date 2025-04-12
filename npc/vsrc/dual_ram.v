@@ -10,20 +10,27 @@ module dual_ram_template #(
     input  wire                         clk                        ,
     input  wire                         rst                        ,
 //读事务总线
+    input  wire        [AW-1:0]         r_addr_i                   ,
     input                               arvalid                    ,//ask read valid
     output reg                          arready                    ,//ask read ready
-    input                               rready                     ,//master 接收data ready
+    
+    output reg         [DW-1:0]         r_data_o                   ,
+    output reg         [   1:0]         rresp                      ,
     output reg                          rvalid                     ,
+    input                               rready                     ,//master 接收data ready
 
-    output wire                         wready                     ,
-    input  wire                         wen                        ,
     input  wire        [AW-1:0]         w_addr_i                   ,
-	input awvalid,
-    input  wire        [DW-1:0]         w_data_i                   ,
+    input                               awvalid                    ,
+    output reg                          awready                    ,
 
-    input  wire        [AW-1:0]         r_addr_i                   ,
+    input  wire        [DW-1:0]         w_data_i                   ,
     input              [   3:0]         wmask                      ,
-    output reg         [DW-1:0]         r_data_o                    
+    input  wire                         wen                        ,
+    output wire                         wready                      
+
+
+
+
 );
 	reg[DW-1:0] memory[0:MEM_NUM-1];
 	wire [31:0] wmask_full;//wmask展开
@@ -33,14 +40,25 @@ module dual_ram_template #(
 
 localparam READ_IDLE = 2'b00 ;
 localparam MASTER_READ_DATA = 2'b01;
-localparam WAIT_MASTER_READY = 2'b10;
+
+localparam WRITE_IDLE = 2'b00 ;
+localparam MASTER_WRITE_DATA = 2'b01;
+reg [1:0] write_state , write_next_state;
+
+// localparam WAIT_MASTER_READY = 2'b10;
 
 reg [1:0] state , next_state;
 reg [AW-1:0]	r_addr;//寄存read地址
 always @(posedge clk or posedge rst) begin
-	if(rst)
+	if(rst) begin
 		state <= READ_IDLE;
-	else state <= next_state; 
+		write_state <= WRITE_IDLE;
+	end
+	else begin
+		state <= next_state; 
+		write_state <= write_next_state;
+	end
+
 	
 end
 assign wready = 1'b1;
@@ -55,7 +73,8 @@ always @(*) begin
 				r_addr = r_addr_i;//master 读地址有效，寄存地址
 				arready = 1'b1;
 				next_state = MASTER_READ_DATA; 
-			end else next_state = READ_IDLE;
+			end 
+			else next_state = READ_IDLE;
 		end 
 
 		MASTER_READ_DATA: begin
@@ -78,11 +97,43 @@ always @(*) begin
 end
 
 
-	assign wmask_full = { {8{wmask[3]}}, {8{wmask[2]}}, {8{wmask[1]}}, {8{wmask[0]}} };
+assign wmask_full = { {8{wmask[3]}}, {8{wmask[2]}}, {8{wmask[1]}}, {8{wmask[0]}} };
 wire [AW-1:0] w_addr_i_1;
+
+
+
 assign w_addr_i_1 = awvalid ? w_addr_i : w_addr_i_1;
+
+
+
+// reg [AW-1:0] 
+
+always @(*)begin
+	case (write_state)
+		WRITE_IDLE:begin
+			awready = 1'b0;			
+			wready = 1'b0;		
+
+			if(awvalid) begin
+				awready = 1'b1;			
+			end 
+			if(wen) begin
+				wready = 1'b1;		
+			end
+		end
+
+		MASTER_READ_DATA:begin
+			
+		end	
+
+
+	default:begin
+	end
+	endcase	
+end
+
 	always @(posedge clk)begin
-		if(~rst && wen)
+		if(~rst && wen && awvalid)
 		begin
 			if(w_addr_i == 32'h80000fe)begin
 				monitor_mem_write(w_addr_i, w_data_i, 0);  
@@ -92,5 +143,8 @@ assign w_addr_i_1 = awvalid ? w_addr_i : w_addr_i_1;
 		end
 
 	end
+
+
+
 
 endmodule
