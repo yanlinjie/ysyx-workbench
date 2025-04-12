@@ -1,5 +1,5 @@
-// import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
-// import "DPI-C" function int pmem_read(input int raddr);
+import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
+import "DPI-C" function int pmem_read(input int raddr);
 module dual_ram_template #(
 	parameter DW = 32,
 	parameter AW = 32,
@@ -71,8 +71,8 @@ always @(*) begin
 			arready = 1'b0;
 			rvalid =1'b0;
 			// rvalid_1 =1'b0;	
-			if(arvalid_2) begin
-				r_addr = r_addr_i_2;//master 读地址有效，寄存地址
+			if(arvalid_d3) begin
+				r_addr = r_addr_i_d3;//master 读地址有效，寄存地址
 				arready = 1'b1;
 				next_state = MASTER_READ_DATA; 
 			end 
@@ -81,9 +81,9 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;//slave 拉低接收地址ready信号
-			// if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
-			// else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
-			// else 
+			if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
+			else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
+			else 
 			r_data_o = memory[r_addr];
 			rvalid =1'b1;// 拉高数据有效信号
 			if (rready) begin //等待data握手
@@ -137,7 +137,7 @@ always @(posedge clk)begin
 	if(~rst && wen )
 	begin
 		if(w_addr_i == 32'h80000fe)begin
-			// monitor_mem_write(w_addr_i, w_data_i, 0);  
+			monitor_mem_write(w_addr_i, w_data_i, 0);  
 		end
 		else
 		memory[w_addr_i] <= (w_data_i & wmask_full) | ( memory[w_addr_i] & ~wmask_full );
@@ -147,27 +147,50 @@ end
 
 //测试总线 打拍延迟
 //读地址通道 
-always @(posedge clk) begin
+// always @(posedge clk) begin
 
-	if(rst) begin
-		r_addr_i_1=0;
-		r_addr_i_2=0;
-		arvalid_1 =0;
-		arvalid_2 =0;
-	end
-	else begin
-		r_addr_i_1 <= r_addr_i;
-		r_addr_i_2 <= r_addr_i_1;
+// 	if(rst) begin
+// 		r_addr_i_1<=0;
+// 		r_addr_i_2<=0;
+// 		arvalid_1 <=0;
+// 		arvalid_2 <=0;
+// 	end
+// 	else begin
+// 		r_addr_i_1 <= r_addr_i;
+// 		r_addr_i_2 <= r_addr_i_1;
 
-		arvalid_1  <= arvalid;
-		arvalid_2  <= arvalid_1;
-	end
+// 		arvalid_1  <= arvalid;
+// 		arvalid_2  <= arvalid_1;
+// 	end
+// end
 
+wire [2:0] arvalid_pipe;
+wire       arvalid_d3;
 
-end
+delay_pipeline #(
+    .WIDTH(1),
+    .STAGES(3)
+) arvalid_delay_inst (
+    .clk(clk),
+    .rst(rst),
+    .din(arvalid),
+    .dout(arvalid_d3)         // arvalid 第 3 拍输出
 
+);
 
+wire [2:0] r_addr_i_pipe;
+wire       r_addr_i_d3;
 
+delay_pipeline #(
+    .WIDTH(32),
+    .STAGES(3)
+) r_addr_i_delay_inst (
+    .clk(clk),
+    .rst(rst),
+    .din(r_addr_i),
+    .dout(r_addr_i_d3)         // r_addr_i 第 3 拍输出
+
+);
 
 
 

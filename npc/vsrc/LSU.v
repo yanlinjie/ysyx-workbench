@@ -21,7 +21,7 @@ module LSU(
         //to wb
     output reg                          ls_write_reg               ,
     output reg         [   4:0]         ls_rd_addr                 ,
-    output reg         [  31:0]         ls_rd_data                 ,
+    output wire         [  31:0]         ls_rd_data                 ,
     output reg         [   1:0]         ls_write_mem               ,
     output reg         [   2:0]         ls_read_mem                ,
     output reg                          ls_rd_aluout_mem           ,
@@ -255,7 +255,7 @@ end
 
 wire [31:0] wb_data;
 assign wb_data = rd_aluout_mem? wb_rddata_1:rd_data;
-
+assign ls_rd_data = wb_data;
 //wmask输出给存储器 write_mem输出给WBU 
 always @(*) begin
     if (ls_start) begin 
@@ -263,12 +263,13 @@ always @(*) begin
         ls_write_mem = write_mem;//写字节 
         ls_read_mem = read_mem;//读字节
         ls_rd_aluout_mem = rd_aluout_mem;
-        ls_rd_data = wb_data;
+        // ls_rd_data = wb_data;
         ls_rd_addr = rd_addr;
         ls_jump_next_pc = jump_next_pc;
         ls_jump = jump;
     end 
 end
+
 
 
 
