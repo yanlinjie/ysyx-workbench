@@ -99,13 +99,15 @@ always @(*) begin
                     if ( ~ arready )  next_state = WAIT_MEM_READY;
                     else next_state = WAIT_MEM_DATA_VALID;//执行模块ready后，跳转至wait_input状态
                 end else if (write_mem_en) begin
-                    if ( ~ wready) begin
-                        next_state = WAIT_MEM_WRITE_READY;    
-                    end else begin
                         wvalid = 1'b1;
                         awvalid = 1'b1;
                         ls_write_mem_addr = (mem_addr- 32'h80000000 ) >>2; //除去低两位，字节对齐
                         ls_mem_data = mem_data_index;//数据索引 处理后的数据
+                    if ( ~ wready) begin
+                        next_state = WAIT_MEM_WRITE_READY;    
+                    end else begin
+
+
                         next_state = WAIT_READY;
                     end
                 end 
@@ -141,9 +143,9 @@ always @(*) begin
                 end else next_state = WAIT_MEM_DATA_VALID;
         end
         WAIT_MEM_WRITE_READY: begin
-            if (wready) begin
                 wvalid = 1'b1;
                 awvalid = 1'b1;
+            if (wready) begin
                 ls_write_mem_addr = (mem_addr- 32'h8000_0000 ) >>2; //除去低两位，字节对齐
                 ls_mem_data = mem_data_index;//数据索引 处理后的数据
                 next_state = WAIT_READY;
