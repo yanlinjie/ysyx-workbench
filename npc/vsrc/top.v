@@ -30,22 +30,22 @@ riscv32 u_riscv32(
     .arready                           (arready                   ),//arready
 
     .rdata                             (rdata                     ),
-    .rresp                             (rresp                     ),
+    .rresp                             (rresp                     ),//未添加
     .rvalid                            (rvalid                    ),// input                               rvalid                     ,
     .rready                            (rready                    ),//     output                              rready                     ,
 
     .awaddr                            (waddr                     ),
     .awvalid                           (awvalid                   ),
-    .awready                           (awready                   ),
+    .awready                           (awready                   ),//未添加
 
     .wdata                             (wdata                     ),
     .wstrb                             (wmask                     ),
     .wvalid                            (wen                       ),
     .wready                            (wready                    ),
     
-    .bresp                             (bresp                     ),
-    .bvalid                            (bvalid                    ),
-    .bready                            (bready                    ) 
+    .bresp                             (bresp                     ),//未添加
+    .bvalid                            (bvalid                    ),//未添加
+    .bready                            (bready                    ) //未添加
 
 
 

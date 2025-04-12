@@ -27,26 +27,26 @@ module LSU(
     output reg                          ls_rd_aluout_mem           ,
         // output reg [31:0] ls_imm,
 
-        //to mem
-        // mem_read_bus
-    input                               arready                    ,//mem addr ready
+
+// mem_read_bus
+    output reg         [  31:0]         ls_read_mem_addr           ,
     output reg                          arvalid                    ,//arvalid
-    output reg                          rready                     ,
-    input                               rvalid                     ,
+    input                               arready                    ,//mem addr ready
+
     input              [  31:0]         rdata                      ,
-    output reg                          read_mem_falg              ,
+    input                               rvalid                     ,
+    output reg                          rready                     ,
 
-        //mem_write_bus
-    input                               wready                     ,
-    output reg                          wvalid                     ,
+//mem_write_bus
+    output reg         [  31:0]         ls_write_mem_addr          ,
     output reg                          awvalid                    ,
-
-
+    input                               awready                    ,
 
     output reg         [  31:0]         ls_mem_data                ,
-    output reg         [  31:0]         ls_read_mem_addr           ,
-    output reg         [  31:0]         ls_write_mem_addr          ,
     output reg         [   3:0]         wmask                      ,//4 bit 可以展开表示 32位 用于掩码 1111
+    output reg                          wvalid                     ,
+    input                               wready                     ,
+
 
         //bus
     input                               ex_valid                   ,
@@ -103,11 +103,9 @@ always @(*) begin
                         awvalid = 1'b1;
                         ls_write_mem_addr = (mem_addr- 32'h80000000 ) >>2; //除去低两位，字节对齐
                         ls_mem_data = mem_data_index;//数据索引 处理后的数据
-                    if ( ~ wready) begin
+                    if ( ~ wready &&  ~ awready) begin
                         next_state = WAIT_MEM_WRITE_READY;    
                     end else begin
-
-
                         next_state = WAIT_READY;
                     end
                 end 
@@ -145,7 +143,7 @@ always @(*) begin
         WAIT_MEM_WRITE_READY: begin
                 wvalid = 1'b1;
                 awvalid = 1'b1;
-            if (wready) begin
+            if (wready && awready) begin
                 ls_write_mem_addr = (mem_addr- 32'h8000_0000 ) >>2; //除去低两位，字节对齐
                 ls_mem_data = mem_data_index;//数据索引 处理后的数据
                 next_state = WAIT_READY;

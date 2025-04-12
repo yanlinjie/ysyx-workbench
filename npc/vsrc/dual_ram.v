@@ -26,7 +26,7 @@ module dual_ram_template #(
     input  wire        [DW-1:0]         w_data_i                   ,
     input              [   3:0]         wmask                      ,
     input  wire                         wen                        ,
-    output reg                         wready                      
+    output reg                          wready                      
 
 
 

@@ -259,7 +259,6 @@ EXU u_EXU(
     .jump_next_pc                      (ex_jump_next_pc           ),
     .ex_valid                          (ex_valid                  ),
     .ex_ready                          (ex_ready                  ),
-    // .ecall_pending                     (ecall_pending             ),//未使用
     .write_csr_en                      (write_csr_en              ),
     .csr_rd_data                       (csr_rd_data               ),
     .csr_rd_addr(csr_rd_addr)
@@ -292,7 +291,7 @@ wire                   [  31:0]         ls_jump_next_pc            ;
 wire                   [  31:0]         ls_read_mem_addr           ;
 wire                   [  31:0]         ls_write_mem_addr          ;
 wire                                    ls_rready                  ;
-wire                                    read_mem_falg              ;
+// wire                                    read_mem_falg              ;
 
 LSU u_LSU(
     .clk                               (clk                       ),
@@ -324,22 +323,22 @@ LSU u_LSU(
 
     
     //mem_bus
-    .arready                           (lsu_arready               ),
-    .rvalid                            (rvalid                    ),
-    .rready                            (ls_rready                 ),
-    .arvalid                           (ls_arvalid                ),
-    .rdata                             (lsu_rdata                 ),
-    .ls_read_mem_addr                  (ls_read_mem_addr          ),
-
-    .read_mem_falg                     (read_mem_falg             ),
-
-    .wready                            (wready                    ),
-    .wvalid                            (wvalid                    ),
     .ls_write_mem_addr                 (awaddr                    ),
     .awvalid                           (awvalid                   ),
+    .awready                           (awready                   ),
+
+    .rdata                             (lsu_rdata                 ),
+    .rvalid                            (rvalid                    ),
+    .rready                            (ls_rready                 ),
+
+    .ls_read_mem_addr                  (ls_read_mem_addr          ),
+    .arvalid                           (ls_arvalid                ),
+    .arready                           (lsu_arready               ),
 
     .ls_mem_data                       (wdata                     ),
     .wmask                             (wstrb                     ),
+    .wvalid                            (wvalid                    ),
+    .wready                            (wready                    ),
 
     .ex_valid                          (ex_valid                  ),
     .wb_ready                          (wb_ready                  ),
@@ -366,7 +365,7 @@ WBU u_WBU(
 
     .rd_en                             (ls_write_reg              ),// input rd_en,
     .rd_addr                           (ls_rd_addr                ),// input [4:0] rd_addr,
-    .rd_data                           (ls_rd_data               ),// input [31:0] rd_data,
+    .rd_data                           (ls_rd_data                ),// input [31:0] rd_data,
     .read_mem                          (ls_read_mem               ),
 
     .en                                (en                        ),// output reg en,
@@ -375,7 +374,7 @@ WBU u_WBU(
 
 
     .ls_valid                          (ls_valid                  ),
-    .pc                                (latter_pc                        ),
+    .pc                                (latter_pc                 ),
     .next_pc                           (next_pc                   ),
     .wb_ready                          (wb_ready                  ),
     .down                              (down                      ) 
