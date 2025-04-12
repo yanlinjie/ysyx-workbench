@@ -34,8 +34,8 @@ module riscv32(
 wire                                    inst_valid                 ;
 wire                                    id_ready                   ;
 wire                                    id_valid                   ;
-
 wire                   [  31:0]         pc                         ;
+wire                   [  31:0]         latter_pc                  ;
 wire                                    read_en                    ;
 wire                   [  31:0]         next_inst                  ;
 
@@ -88,19 +88,7 @@ always @(*) begin
 
 end
 
-//read 会存在不能被4整除的情况
-// reg [31:0] wb_rddata_1;
-// always @(*) begin
-//     case(ls_read_mem_addr[1:0])
-//         2'b00:wb_rddata_1 = rdata;
-//         2'b01:wb_rddata_1 = {24'b0, rdata[15:8] } ;
-//         2'b10:wb_rddata_1 = {24'b0, rdata[23:16]} ;   
-//         2'b11:wb_rddata_1 = {24'b0, rdata[31:24]} ;
-//         // 2'b10:wb_rddata_1 = rdata[23:16];
-//         // 2'b11:wb_rddata_1 = rdata[31:24];
 
-//     endcase
-// end
 
 wire [31:0]  wb_rddata;//to wbu
 assign next_inst = rvalid? rdata : inst;//
@@ -137,7 +125,7 @@ IFU u_IFU(
     .imm                               (ex_imm                    ),// input [31:0] imm,
     .inst_valid                        (inst_valid                ),
 
-
+.latter_pc(latter_pc),
     .inst                              (inst                      ) 
 );
 
@@ -165,7 +153,7 @@ wire                   [   1:0]         jump                       ;
 IDU u_IDU(
     .clk                               (clk                       ),
     .rst                               (rst                       ),
-    .pc                                (pc                        ),
+    .pc                                (latter_pc                        ),
     .instruction                       (inst                      ),
 
     .pc_valid                          (inst_valid                ),
@@ -277,7 +265,7 @@ EXU u_EXU(
 
     .muxa_ctr                          (alua_rs1_pc_zero          ),
     .rs1_data                          (read_rs1_data             ),
-    .pc                                (pc                        ),
+    .pc                                (latter_pc                        ),
     .muxb_ctr                          (alub_rs2_imm_4            ),
     .rs2_data                          (read_rs2_data             ),
     .imm                               (imm_32                    ),
@@ -411,7 +399,7 @@ WBU u_WBU(
 
 
     .ls_valid                          (ls_valid                  ),
-    .pc                                (pc                        ),
+    .pc                                (latter_pc                        ),
     .next_pc                           (next_pc                   ),
     .wb_ready                          (wb_ready                  ),
     .down                              (down                      ) 
