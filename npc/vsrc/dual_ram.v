@@ -76,7 +76,7 @@ wire  [10:0] cnt_1 ;
 always @(posedge clk or posedge rst) begin
   if (rst)
     cnt <= 0;
-  else if (arvalid && cnt < 10)
+  else if (arvalid && cnt < 20)
     cnt <= cnt + 1;
   else if (state == MASTER_READ_DATA && rready)
     cnt <= 0;  // 成功传输后重置
@@ -93,7 +93,7 @@ always @(*) begin
 			arready = 1'b0;
 			rvalid =1'b0;
 			// rvalid_1 =1'b0;	
-			if(arvalid && cnt == 10) begin
+			if(arvalid && cnt == 20) begin
 				// if(cnt == 10) begin
 					r_addr = r_addr_i;//master 读地址有效，寄存地址
 					arready = 1'b1;
@@ -105,11 +105,14 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;//slave 拉低接收地址ready信号
-			if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
-			else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
-			else 
-			r_data_o = memory[r_addr];
-			rvalid =1'b1;// 拉高数据有效信号
+			if (cnt == 20) begin
+				if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
+				else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
+				else 
+				r_data_o = memory[r_addr];
+				rvalid =1'b1;// 拉高数据有效信号
+			end
+
 			if (rready) begin //等待data握手
 					next_state = READ_IDLE;
 				end else begin
