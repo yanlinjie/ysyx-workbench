@@ -50,6 +50,12 @@ reg ifu_arready;
 always @(*) begin
     arvalid   = 1'b0;
     rready = 1'b0;
+    // lsu_rdata = 0;
+    // lsu_rvalid = 0;
+    // lsu_arready =0;
+    // ifu_rdata = 0;
+    // ifu_rvalid = 0;
+    // ifu_arready =0;
     if (ls_arvalid | ls_rready) begin
         raddr = ((ls_read_mem_addr - 32'h80000000 )>>2);//out
         arvalid   = ls_arvalid;//out
@@ -66,12 +72,6 @@ always @(*) begin
         ifu_arready = arready;
     end 
 end
-
-
-
-
-
-
 
 
 
@@ -107,7 +107,6 @@ always @(*) begin
             wb_rddata_1 = lsu_rdata;
         end
     endcase
-
 end
 
 
@@ -365,6 +364,7 @@ LSU u_LSU(
     .rvalid                            (rvalid                    ),
     .rready                            (ls_rready                 ),
     .arvalid                           (ls_arvalid                ),
+    .rdata(lsu_rdata),
     .ls_read_mem_addr                  (ls_read_mem_addr          ),
 
     .read_mem_falg                     (read_mem_falg             ),
@@ -391,7 +391,8 @@ reg ls_rd_aluout_mem_1;
 always @(posedge clk ) begin
         ls_rd_aluout_mem_1<=ls_rd_aluout_mem;
 end
-assign rd_reg_data = ls_rd_aluout_mem_1 ? wb_rddata : ls_rd_data;//判断rd reg data是来自于alu计算结果 还是 from mem 
+// assign rd_reg_data = ls_rd_aluout_mem_1 ? wb_rddata : ls_rd_data;//判断rd reg data是来自于alu计算结果 还是 from mem 
+assign rd_reg_data =  ls_rd_data;//判断rd reg data是来自于alu计算结果 还是 from mem 
 
 
 

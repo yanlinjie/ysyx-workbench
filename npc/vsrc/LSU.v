@@ -33,7 +33,7 @@ module LSU(
     output reg                          arvalid                    ,//arvalid
     output reg                          rready                     ,
     input                               rvalid                     ,
-
+input [31:0] rdata,
     output reg                          read_mem_falg              ,
 
         //mem_write_bus
@@ -220,7 +220,41 @@ always @(*) begin
 
 end
 
+//read
+reg [31:0] wb_rddata_1;
+reg [7:0] read_one_byte;
+reg [15:0] read_half_word;
+wire [1:0] read_index;
+assign  read_index= ls_read_mem_addr[1:0];
+always @(*) begin
+    case (read_mem[1:0])
+        2'b00: begin //one_byte lb
+                case(read_index)
+                     2'b00: read_one_byte = rdata[7:0];
+                     2'b01: read_one_byte = rdata[15:8];
+                     2'b10: read_one_byte = rdata[23:16];
+                     2'b11: read_one_byte = rdata[31:24];
+                    default: read_one_byte = 8'b0;
+            endcase
+                    wb_rddata_1 ={ 24'd0 ,read_one_byte};//lb读取一字节后，再给wbu处理，写的有点冗余。
+        end
+        2'b01: begin //one_byte lh
+                case(read_index)
+                     2'b00: read_half_word = rdata[15:0];
+                     2'b10: read_half_word = rdata[31:16];
+                    default: read_half_word = 16'b0;
+            endcase
+                    wb_rddata_1 ={ 16'd0 ,read_half_word};//lb读取一字节后，再给wbu处理，写的有点冗余。
+        end
+        2'b10: wb_rddata_1 = rdata; 
+        default: begin
+            wb_rddata_1 = rdata;
+        end
+    endcase
+end
 
+wire [31:0] wb_data;
+assign wb_data = rd_aluout_mem? wb_rddata_1:rd_data;
 
 //wmask输出给存储器 write_mem输出给WBU 
 always @(*) begin
@@ -229,7 +263,7 @@ always @(*) begin
         ls_write_mem = write_mem;//写字节 
         ls_read_mem = read_mem;//读字节
         ls_rd_aluout_mem = rd_aluout_mem;
-        ls_rd_data = rd_data;
+        ls_rd_data = wb_data;
         ls_rd_addr = rd_addr;
         ls_jump_next_pc = jump_next_pc;
         ls_jump = jump;
