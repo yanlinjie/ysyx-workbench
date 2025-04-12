@@ -227,7 +227,7 @@ wire                   [  31:0]         jump_pc                    ;
 wire                   [  31:0]         ex_jump_next_pc            ;
 wire                   [   1:0]         ex_jump                    ;
 wire                   [  31:0]         ex_rs2_data                ;
-wire ecall_pending;
+// wire ecall_pending;
 
 EXU u_EXU(
     .clk                               (clk                       ),
@@ -274,7 +274,7 @@ EXU u_EXU(
     .jump_next_pc                      (ex_jump_next_pc           ),
     .ex_valid                          (ex_valid                  ),
     .ex_ready                          (ex_ready                  ),
-    .ecall_pending                     (ecall_pending             ),//未使用
+    // .ecall_pending                     (ecall_pending             ),//未使用
     .write_csr_en                      (write_csr_en              ),
     .csr_rd_data                       (csr_rd_data               ) ,
     .csr_rd_addr(csr_rd_addr)

@@ -56,18 +56,20 @@ always @(*) begin
         end
         IDLE : begin
                 rready = 1'b0;
-                read_en = 1'b0;  
+                // read_en = 1'b0;  
                 inst_valid = 1'b0;          
             if (down) begin  //由于wbu 过来的down只有一个时钟周期，所以设置了一个WAIT_MEM_READY状态
                 pc = next_pc;//mem's addr
                 if ( ~arready ) begin
                     next_state = WAIT_MEM_READY;
                 end else  begin
-                    read_en = 1'b1;
+                    read_en = 1'b1;//同时拉高valid 和接收ready
+                    rready = 1'b1;
                     next_state = WAIT_READY;
                 end 
             end else if(jump_flag) begin
                     read_en = 1'b1;
+                    rready = 1'b1;
                     pc = jump_pc;
                     next_state = WAIT_READY;
             end else next_state = IDLE;

@@ -49,32 +49,37 @@ module EXU(
     output reg         [  31:0]         jump_next_pc               ,
 
     output reg                          ex_valid                   ,
-    output reg                          ex_ready                    ,
+    output reg                          ex_ready                   ,
 
     //ecall mret
-    output reg ecall_pending,
+    // output reg ecall_pending,
     //csrrw csrrs写回寄存器 传送到wbu模块进行写回，
-    output reg write_csr_en ,
-    output reg [31:0] csr_rd_data ,
-    output reg [4:0] csr_rd_addr
+    output reg                          write_csr_en               ,
+    output reg         [  31:0]         csr_rd_data                ,
+    output reg         [   4:0]         csr_rd_addr                 
 
     
 );
 
 // 状态定义
-localparam                              IDLE        = 2'b0         ;//等待上游模块的 valid信号
-localparam                              WAIT_READY = 2'b1          ;//等待下游模块 ready信号
+localparam                              IDLE        = 3'd0         ;//等待上游模块的 valid信号
+localparam                              WAIT_READY = 3'd1          ;//等待下游模块 ready信号
+localparam                              PC_JUMP = 3'd2          ;//等待下游模块 ready信号
+
 
 // ========= CSR 寄存器 =========
 reg                    [  31:0]         mtvec, mstatus, mcause, mepc;
 
-reg                    [   1:0]         state, next_state          ;
+reg                    [   2:0]         state, next_state          ;
 
 
-wire                   [  31:0]         a                      ;
-wire                   [  31:0]         b                      ;
-reg                   [  31:0]         out                        ;
+wire                   [  31:0]         a                          ;
+wire                   [  31:0]         b                          ;
+reg                    [  31:0]         out                        ;
 reg                    [  31:0]         current_pc                 ;
+  // ========= SRA Helper =========
+  wire [31:0] SRA_mask = 32'hffff_ffff >> b[4:0];
+  wire [31:0] sra_result = (a >> b[4:0]) & SRA_mask | ({32{a[31]}} & ~SRA_mask);
 
     // 状态转移
 always @(posedge clk or posedge rst) begin
@@ -100,7 +105,7 @@ always @(*) begin
             ex_ready = 1'b1;
             ex_valid = 1'b0;
             write_csr_en = 1'b0;
-            ecall_pending = 1'b0;
+            // ecall_pending = 1'b0;
 
             if (id_valid)
                 next_state = WAIT_READY;
@@ -112,10 +117,44 @@ always @(*) begin
             ex_ready = 1'b0;
             write_csr_en = 1'b0;
             ex_valid = 1'b0;
-            ecall_pending = 1'b0;
+            // ecall_pending = 1'b0;
             jump_flag = 1'b0;
-            next_state = WAIT_READY;
+            // next_state = WAIT_READY;
+            if (ls_ready) begin
+                next_state = IDLE;
+            end else next_state = WAIT_READY;
+            
+            condition_branch = 1'b0;
+                case (alu_ctr)
+                5'b00000: out = a + b;
+                5'b00001: out = a - b;
+                5'b00010: out = a & b;
+                5'b00011: out = a | b;
+                5'b00100: out = a ^ b;
+                5'b00101: out = a << b[4:0];
+                5'b00110: out = ($signed(a) < $signed(b)) ? 32'b1 : 32'b0;
+                5'b00111: out = (a < b) ? 32'b1 : 32'b0;
+                5'b01000: out = a >> b[4:0];
+                5'b01001: out = sra_result;
+                5'b01010: begin out = a + b; out[0] = 1'b0; end
 
+                // branch condition
+                5'b01011: condition_branch = (a == b);
+                5'b01100: condition_branch = (a != b);
+                5'b01101: condition_branch = ($signed(a) < $signed(b));
+                5'b01110: condition_branch = ($signed(a) >= $signed(b));
+                5'b01111: condition_branch = (a < b);
+                5'b10000: condition_branch = (a >= b);
+                // 5'b10101:begin
+                //             jump_flag = 1'b1;
+                //             jump_pc = mepc;
+                //             ex_valid = 1'b0;
+                //             // next_state = PC_JUMP;
+                //             next_state = IDLE;
+                // end
+                default:begin
+                end
+                endcase
             if (alu_ctr == 5'b10011 || alu_ctr == 5'b10100) begin  // CSR 指令
                 write_csr_en = 1'b1;
                 csr_rd_data = (imm == 32'h305) ? mtvec :
@@ -154,8 +193,10 @@ always @(*) begin
                     mcause = 32'hffffffff;
                     mepc = current_pc + 4;
                     ex_valid = 1'b0;
+                    // next_state = PC_JUMP;
                     next_state = IDLE;
-                end else begin  // ebreak
+                end 
+                else begin  // ebreak
                     dpi_exit_simulation();
                 end
             end
@@ -163,13 +204,16 @@ always @(*) begin
                 jump_flag = 1'b1;
                 jump_pc = mepc;
                 ex_valid = 1'b0;
+                // next_state = PC_JUMP;
                 next_state = IDLE;
             end
             else if (condition_branch) begin  // B型指令
                 jump_flag = 1'b1;
                 jump_pc = current_pc + imm;
                 ex_valid = 1'b0;
+                // next_state = PC_JUMP;
                 next_state = IDLE;
+
             end
             else if (jump[0]) begin  // jal
                 jump_next_pc = current_pc + imm;
@@ -187,6 +231,10 @@ always @(*) begin
             end
         end
 
+        PC_JUMP:begin
+            jump_flag = 1'b1;
+            next_state = IDLE;
+        end
         default: begin
             next_state = IDLE;
         end
@@ -236,38 +284,35 @@ mux3_1 mux3_1_inst_b(
 
 
 
-  // ========= SRA Helper =========
-  wire [31:0] SRA_mask = 32'hffff_ffff >> b[4:0];
-  wire [31:0] sra_result = (a >> b[4:0]) & SRA_mask | ({32{a[31]}} & ~SRA_mask);
 
-  // ========= 组合逻辑 =========
-  always @(*) begin
-    condition_branch = 1'b0;
-    out = 32'b0;
-    case (alu_ctr)
-      5'b00000: out = a + b;
-      5'b00001: out = a - b;
-      5'b00010: out = a & b;
-      5'b00011: out = a | b;
-      5'b00100: out = a ^ b;
-      5'b00101: out = a << b[4:0];
-      5'b00110: out = ($signed(a) < $signed(b)) ? 32'b1 : 32'b0;
-      5'b00111: out = (a < b) ? 32'b1 : 32'b0;
-      5'b01000: out = a >> b[4:0];
-      5'b01001: out = sra_result;
-      5'b01010: begin out = a + b; out[0] = 1'b0; end
+//   // ========= 组合逻辑 =========
+//   always @(*) begin
+//     // condition_branch = 1'b0;
+//     // out = 32'b0;
+//     // case (alu_ctr)
+//     //   5'b00000: out = a + b;
+//     //   5'b00001: out = a - b;
+//     //   5'b00010: out = a & b;
+//     //   5'b00011: out = a | b;
+//     //   5'b00100: out = a ^ b;
+//     //   5'b00101: out = a << b[4:0];
+//     //   5'b00110: out = ($signed(a) < $signed(b)) ? 32'b1 : 32'b0;
+//     //   5'b00111: out = (a < b) ? 32'b1 : 32'b0;
+//     //   5'b01000: out = a >> b[4:0];
+//     //   5'b01001: out = sra_result;
+//     //   5'b01010: begin out = a + b; out[0] = 1'b0; end
 
-      // branch condition
-      5'b01011: condition_branch = (a == b);
-      5'b01100: condition_branch = (a != b);
-      5'b01101: condition_branch = ($signed(a) < $signed(b));
-      5'b01110: condition_branch = ($signed(a) >= $signed(b));
-      5'b01111: condition_branch = (a < b);
-      5'b10000: condition_branch = (a >= b);
-            default:begin
-      end
-    endcase
+//     //   // branch condition
+//     //   5'b01011: condition_branch = (a == b);
+//     //   5'b01100: condition_branch = (a != b);
+//     //   5'b01101: condition_branch = ($signed(a) < $signed(b));
+//     //   5'b01110: condition_branch = ($signed(a) >= $signed(b));
+//     //   5'b01111: condition_branch = (a < b);
+//     //   5'b10000: condition_branch = (a >= b);
+//     //         default:begin
+//     //   end
+//     // endcase
 
-end
+// end
 
 endmodule

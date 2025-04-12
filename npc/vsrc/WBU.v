@@ -1,27 +1,27 @@
 module WBU(
-    input clk,
-    input rst,
+    input                               clk                        ,
+    input                               rst                        ,
 
 //jump
-    input [1:0] jump,
-    input [31:0] jump_next_pc,
+    input              [   1:0]         jump                       ,
+    input              [  31:0]         jump_next_pc               ,
 
-    input rd_en,
-    input [4:0] rd_addr,
-    input [31:0] rd_data,
+    input                               rd_en                      ,
+    input              [   4:0]         rd_addr                    ,
+    input              [  31:0]         rd_data                    ,
 
-    input [2:0] read_mem,//由译码模块->EXU-LSU 过来的控制信号 控制读从mem中读到的数据是的字节数
+    input              [   2:0]         read_mem                   ,//由译码模块->EXU-LSU 过来的控制信号 控制读从mem中读到的数据是的字节数
 
-    output reg en,//reg en
-    output reg [4:0] addr,//reg addr rd_addr
-    output reg [31:0] data,//rd_data
+    output reg                          en                         ,//reg en
+    output reg         [   4:0]         addr                       ,//reg addr rd_addr
+    output reg         [  31:0]         data                       ,//rd_data
 
-    input ls_valid,//bus
-    input [31:0] pc,
+    input                               ls_valid                   ,//bus
+    input              [  31:0]         pc                         ,
 
-    output reg [31:0] next_pc,
-    output reg wb_ready,
-    output reg down
+    output reg         [  31:0]         next_pc                    ,
+    output reg                          wb_ready                   ,
+    output reg                          down                        
 
 );
 
