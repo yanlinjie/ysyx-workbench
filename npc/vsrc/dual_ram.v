@@ -1,6 +1,6 @@
 
-import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
-import "DPI-C" function int pmem_read(input int raddr);
+// import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
+// import "DPI-C" function int pmem_read(input int raddr);
 module dual_ram_template #(
 	parameter DW = 32,
 	parameter AW = 32,
@@ -26,7 +26,7 @@ module dual_ram_template #(
     input  wire        [DW-1:0]         w_data_i                   ,
     input              [   3:0]         wmask                      ,
     input  wire                         wen                        ,
-    output wire                         wready                      
+    output reg                         wready                      
 
 
 
@@ -61,7 +61,7 @@ always @(posedge clk or posedge rst) begin
 
 	
 end
-assign wready = 1'b1;
+// assign wready = 1'b1;
 //读事务
 always @(*) begin
 	case (state)
@@ -79,9 +79,9 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;//slave 拉低接收地址ready信号
-			if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
-			else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
-			else 
+			// if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
+			// else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
+			// else 
 			r_data_o = memory[r_addr];
 			rvalid =1'b1;// 拉高数据有效信号
 			if (rready) begin //等待data握手
@@ -136,7 +136,7 @@ end
 		if(~rst && wen && awvalid)
 		begin
 			if(w_addr_i == 32'h80000fe)begin
-				monitor_mem_write(w_addr_i, w_data_i, 0);  
+				// monitor_mem_write(w_addr_i, w_data_i, 0);  
 			end
 			else
 			memory[w_addr_i] <= (w_data_i & wmask_full) | ( memory[w_addr_i] & ~wmask_full );
