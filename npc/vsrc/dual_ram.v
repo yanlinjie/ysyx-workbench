@@ -68,42 +68,46 @@ reg [10:0] cnt ;
 reg  [10:0] cnt_1 ;
 reg  [10:0] cnt_2 ;
 reg  [10:0] cnt_3 ;
+localparam DELAY_ARREADY = 30;
+localparam DELAY_RVALID = 10;
+localparam DELAY_WREADY = 40;
+localparam DELAY_BVALID = 30;
 
 //test
 //延迟arready返回信号
 always @(posedge clk or posedge rst) begin
   if (rst)
     cnt <= 0;
-  else if (arvalid && cnt < 20)
+  else if (arvalid && cnt < DELAY_ARREADY)
     cnt <= cnt + 1;
-  else if (cnt == 20)
+  else if (cnt == DELAY_ARREADY)
     cnt <= 0;  // 成功传输后重置
 end
 //延迟rvalid返回信号
 always @(posedge clk or posedge rst) begin
   if (rst)
     cnt_1 <= 0;
-  else if (state == MASTER_READ_DATA  && cnt_1 < 20)
+  else if (state == MASTER_READ_DATA  && cnt_1 < DELAY_RVALID)
     cnt_1 <= cnt_1 + 1;
-  else if (cnt_1 == 20)
+  else if (cnt_1 == DELAY_RVALID)
     cnt_1 <= 0;  // 成功传输后重置
 end
 //延迟wready 和 awready返回信号
 always @(posedge clk or posedge rst) begin
   if (rst)
     cnt_2 <= 0;
-  else if ( awvalid  && cnt_2 < 20)
+  else if ( awvalid  && cnt_2 < DELAY_WREADY)
     cnt_2 <= cnt_2 + 1;
-  else if (cnt_2 == 20)
+  else if (cnt_2 == DELAY_WREADY)
     cnt_2 <= 0;  // 成功传输后重置
 end
 //延迟写回复bvalid返回信号
 always @(posedge clk or posedge rst) begin
   if (rst)
     cnt_3 <= 0;
-  else if (write_state == MASTER_WRITE_DATA && cnt_3 < 20)
+  else if (write_state == MASTER_WRITE_DATA && cnt_3 < DELAY_BVALID)
     cnt_3 <= cnt_3 + 1;
-  else if (cnt_3 == 20)
+  else if (cnt_3 == DELAY_BVALID)
     cnt_3 <= 0;  // 成功传输后重置
 end
 
@@ -115,7 +119,7 @@ always @(*) begin
 			rvalid =1'b0;
 			// rvalid_1 =1'b0;	
 			if(arvalid ) begin
-				if(cnt == 20) begin
+				if(cnt == DELAY_ARREADY) begin
 					r_addr = r_addr_i;//master 读地址有效，寄存地址
 					arready = 1'b1;
 					next_state = MASTER_READ_DATA; 
@@ -126,7 +130,7 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;//slave 拉低接收地址ready信号
-			if (cnt_1 == 20) begin
+			if (cnt_1 == DELAY_RVALID) begin
 				if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
 				else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
 				else 
@@ -150,15 +154,8 @@ end
 
 
 assign wmask_full = { {8{wmask[3]}}, {8{wmask[2]}}, {8{wmask[1]}}, {8{wmask[0]}} };
-wire [AW-1:0] w_addr_i_1;
 
 
-
-assign w_addr_i_1 = awvalid ? w_addr_i : w_addr_i_1;
-
-
-
-// reg [AW-1:0] 
 
 always @(*)begin
 	case (write_state)
@@ -168,7 +165,7 @@ always @(*)begin
 			bvalid = 1'b0;
 
 			if(awvalid && wen) begin
-				if(cnt_2 == 20) begin
+				if(cnt_2 == DELAY_WREADY) begin
 				awready = 1'b1;			
 				wready = 1'b1;	
 				write_next_state = MASTER_WRITE_DATA;
@@ -178,7 +175,7 @@ always @(*)begin
 		end
 
 		MASTER_WRITE_DATA:begin
-			if (cnt_3 == 20) begin
+			if (cnt_3 == DELAY_BVALID) begin
 				bresp = 2'b00;//表示写数据ok
 				bvalid = 1'b1;
 				if(bready) begin
@@ -192,7 +189,7 @@ always @(*)begin
 end
 
 always @(posedge clk)begin
-	if(~rst && awvalid && wen )
+	if(~rst && awvalid && wen && awready && wready)
 	begin
 		if(w_addr_i == 32'h80000fe)begin
 			monitor_mem_write(w_addr_i, w_data_i, 0);  
