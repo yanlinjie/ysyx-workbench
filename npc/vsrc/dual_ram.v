@@ -1,4 +1,4 @@
-import "DPI-C" function void monitor_mem_write(input int address, input int data, input int wtype);
+import "DPI-C" function void monitor_mem_write(input int address, input byte data, input int wtype);
 import "DPI-C" function int pmem_read(input int raddr);
 module dual_ram_template #(
 	parameter DW = 32,
@@ -192,7 +192,7 @@ always @(posedge clk)begin
 	if(~rst && awvalid && wen && awready && wready)
 	begin
 		if(w_addr_i == 32'h80000fe)begin
-			monitor_mem_write(w_addr_i, w_data_i, 0);  
+			monitor_mem_write(w_addr_i, w_data_i[7:0], 0);  
 		end
 		else
 		memory[w_addr_i] <= (w_data_i & wmask_full) | ( memory[w_addr_i] & ~wmask_full );

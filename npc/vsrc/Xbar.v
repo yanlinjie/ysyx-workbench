@@ -1,3 +1,5 @@
+// import "DPI-C" function void monitor_mem_write(input int address, input byte data, input int wtype);
+
 module Xbar (
 //***********************************IFU*********************************//    
     //AR master读地址
@@ -26,17 +28,17 @@ module Xbar (
     //AW master 写地址 未完善
     input              [  31:0]         lsu_awaddr                 ,
     input                               lsu_awvalid                ,
-    output                              lsu_awready                ,//未添加
+    output  reg                            lsu_awready                ,//未添加
 
     //W master 写数据  未完善
     input              [  31:0]         lsu_wdata                  ,// LSU
     input              [   3:0]         lsu_wstrb                  ,
     input                               lsu_wvalid                 ,//  LSU
-    output                              lsu_wready                 ,
+    output   reg                           lsu_wready                 ,
     
     // // B 写回复
-    output             [   1:0]         lsu_bresp                  ,//未添加
-    output                              lsu_bvalid                 ,//未添加
+    output   reg          [   1:0]         lsu_bresp                  ,//未添加
+    output     reg                         lsu_bvalid                 ,//未添加
     input                               lsu_bready                 ,//未添加
 
 //***********************************RAM*********************************//    
@@ -52,80 +54,182 @@ module Xbar (
     output reg                          s0_rready                  ,
 
     //AW master 写地址 未完善
-    output             [  31:0]         s0_awaddr                  ,
-    output                              s0_awvalid                 ,
+    output   reg          [  31:0]         s0_awaddr                  ,
+    output   reg                           s0_awvalid                 ,
     input                               s0_awready                 ,//
 
     //W master 写数据  未完善
-    output             [  31:0]         s0_wdata                   ,// LSU
-    output             [   3:0]         s0_wstrb                   ,
-    output                              s0_wvalid                  ,//  LSU
+    output     reg        [  31:0]         s0_wdata                   ,// LSU
+    output    reg         [   3:0]         s0_wstrb                   ,
+    output     reg                         s0_wvalid                  ,//  LSU
     input                               s0_wready                  ,
     
     // // B 写回复
     input              [   1:0]         s0_bresp                   ,// 目前只会返回0
     input                               s0_bvalid                  ,//
-    output                              s0_bready                   //
+    output     reg                         s0_bready                  , //
+//***********************************UART*********************************//    
+    //AR master读地址
+    output reg         [  31:0]         s1_araddr                  ,//  IFU(pc) or LSU
+    output reg                          s1_arvalid                 ,//  IFU or LSU
+    input                               s1_arready                 ,
 
+    //R master 读数据
+    input              [  31:0]         s1_rdata                   ,// to IFU(inst) or WBU(rd_data)
+    input              [   1:0]         s1_rresp                   ,// 目前只返回0
+    input                               s1_rvalid                  ,
+    output reg                          s1_rready                  ,
+
+    //AW master 写地址 未完善
+    output    reg         [  31:0]         s1_awaddr                  ,
+    output    reg                          s1_awvalid                 ,
+    input                               s1_awready                 ,//
+
+    //W master 写数据  未完善
+    output   reg          [  31:0]         s1_wdata                   ,// LSU
+    output    reg         [   3:0]         s1_wstrb                   ,
+    output     reg                         s1_wvalid                  ,//  LSU
+    input                               s1_wready                  ,
+    
+    // // B 写回复
+    input              [   1:0]         s1_bresp                   ,// 目前只会返回0
+    input                               s1_bvalid                  ,//
+    output    reg                          s1_bready                   //
 );
 
-//读通道
+  localparam UART_BASE  = 32'ha0000000;
+  localparam UART_MASK  = 32'hfffff000;
+  localparam CLINT_BASE = 32'h20000000;
+  localparam CLINT_MASK = 32'hfffff000;
+  localparam SRAM_BASE  = 32'h80000000;
+  localparam SRAM_MASK  = 32'hff000000;
+
+//***********************************master*****************************//
+//AR master读地址
+reg                    [  31:0]         m_araddr                  ;
+reg                                     m_arvalid                 ;
+reg                                     m_arready                 ;
+//R master 读数据
+reg                    [  31:0]         m_rdata                   ;
+reg                    [   1:0]         m_rresp                   ;
+reg                                     m_rvalid                  ;
+reg                                     m_rready                  ;
+//AW master 写地址 未完善
+reg                    [  31:0]         m_awaddr                  ;
+reg                                     m_awvalid                 ;
+reg                                     m_awready                 ;
+//W master 写数据  未完善
+reg                    [  31:0]         m_wdata                   ;
+reg                    [   3:0]         m_wstrb                   ;
+reg                                     m_wvalid                  ;
+reg                                     m_wready                  ;
+// // B 写回复
+reg                    [   1:0]         m_bresp                   ;
+reg                                     m_bvalid                  ;
+reg                                     m_bready                  ;
+
+//***********************************slave****************************//
+//AR master读地址
+reg                    [  31:0]         s_araddr                  ;
+reg                                     s_arvalid                 ;
+reg                                     s_arready                 ;
+//R master 读数据
+reg                    [  31:0]         s_rdata                   ;
+reg                    [   1:0]         s_rresp                   ;
+reg                                     s_rvalid                  ;
+reg                                     s_rready                  ;
+//AW master 写地址 未完善
+reg                    [  31:0]         s_awaddr                  ;
+reg                                     s_awvalid                 ;
+reg                                     s_awready                 ;
+//W master 写数据  未完善
+reg                    [  31:0]         s_wdata                   ;
+reg                    [   3:0]         s_wstrb                   ;
+reg                                     s_wvalid                  ;
+reg                                     s_wready                  ;
+// // B 写回复
+reg                    [   1:0]         s_bresp                   ;
+reg                                     s_bvalid                  ;
+reg                                     s_bready                  ;
+
+//读-master: IFU/LSU
 always @(*) begin
-    s0_arvalid  = 1'b0;
-    s0_rready = 1'b0;
+        m_arvalid  = 1'b0;
+        m_rready = 1'b0;
     if (lsu_arvalid | lsu_rready) begin
-        s0_araddr = lsu_araddr;//out
-        s0_arvalid   = lsu_arvalid;//out
-        lsu_arready = s0_arready;
+        m_araddr = ((lsu_araddr - 32'h80000000 )>>2) ;
+        m_arvalid   = lsu_arvalid;
+        lsu_arready = m_arready;
 
-        lsu_rdata = s0_rdata;//in
-        lsu_rvalid = s0_rvalid;//in
-        s0_rready = lsu_rready;//out
-    end else if(ifu_arvalid | ifu_rready)  begin
-        s0_araddr = ifu_araddr;
-        s0_arvalid   = ifu_arvalid;
-        ifu_arready = s0_arready;
+        lsu_rdata = m_rdata;                                       
+        lsu_rvalid = m_rvalid;                                    
+        m_rready = lsu_rready;                                     
+    end else if(ifu_arvalid | ifu_rready) begin
+        m_araddr = ((ifu_araddr - 32'h80000000 )>>2);
+        m_arvalid   = ifu_arvalid;
+        ifu_arready = m_arready;
 
-        ifu_rdata = s0_rdata;
-        ifu_rvalid = s0_rvalid;
-        s0_rready = ifu_rready;
+        ifu_rdata = m_rdata;
+        ifu_rvalid = m_rvalid;
+        m_rready = ifu_rready;
+    end
 
-    end 
+end
+//
+always @(*) begin
+    s0_araddr = m_araddr;//out
+    s0_arvalid   = m_arvalid;//out
+    m_arready = s0_arready;
+
+    m_rdata = s0_rdata;//in
+    m_rvalid = s0_rvalid;//in
+    s0_rready = m_rready;//out
 end
 
+//写数据-master：只有LSU  //写的话根据地址去选择   
+always @(*) begin
+    // if (lsu_awaddr == 32'ha000_03f8) begin
+    //     s1_awaddr = lsu_awaddr;
+    //     s1_awvalid = lsu_awvalid;
+    //     lsu_awready = s1_awready;
 
-assign  s0_awaddr  = lsu_awaddr ;
-assign  s0_awvalid = lsu_awvalid;
-assign  lsu_awready = s0_awready;
+    //     s1_wdata  =  lsu_wdata  ;
+    //     s1_wstrb  =  lsu_wstrb  ;
+    //     s1_wvalid =  lsu_wvalid ;
+    //     lsu_wready = s1_wready  ;
 
-assign s0_wdata  =  lsu_wdata  ;
-assign s0_wstrb  =  lsu_wstrb  ;
-assign s0_wvalid =  lsu_wvalid ;
-assign lsu_wready = s0_wready  ;
+    //     lsu_bresp = s1_bresp  ;
+    //     lsu_bvalid = s1_bvalid ;
+    //     s1_bready = lsu_bready;
+    // end else 
+    begin
+        s0_awaddr  = ((lsu_awaddr - 32'h80000000 )>>2) ;
+        s0_awvalid = lsu_awvalid;
+        lsu_awready = s0_awready;
+        s0_wdata  =  lsu_wdata  ;
+        s0_wstrb  =  lsu_wstrb  ;
+        s0_wvalid =  lsu_wvalid ;
+        lsu_wready = s0_wready  ;
+        lsu_bresp = s0_bresp  ;
+        lsu_bvalid = s0_bvalid ;
+        s0_bready = lsu_bready;
+    end
 
-assign lsu_bresp = s0_bresp  ;
-assign lsu_bvalid = s0_bvalid ;
-assign s0_bready = lsu_bready;
+end
 
-// always @(*) begin
-//     arvalid   = 1'b0;
-//     rready = 1'b0;
-//     if (ls_arvalid | ls_rready) begin
-//         araddr = ((ls_read_mem_addr - 32'h80000000 )>>2);//out
-//         arvalid   = ls_arvalid;//out
-//         lsu_arready = arready;
+// assign  s0_awaddr  = ((lsu_awaddr - 32'h80000000 )>>2) ;
+// assign  s0_awvalid = lsu_awvalid;
+// assign  lsu_awready = s0_awready;
 
-//         lsu_rdata = rdata;//in
-//         lsu_rvalid = rvalid;//in
-//         rready = ls_rready;//out
-//     end else if(read_en | if_rready)  begin
-//         araddr = ((pc - 32'h80000000 )>>2);
-//         arvalid   = read_en;
-//         rready = if_rready;
-//         ifu_rdata = rdata;
-//         ifu_rvalid = rvalid;
-//         ifu_arready = arready;
-//     end 
-// end
+// assign s0_wdata  =  lsu_wdata  ;
+// assign s0_wstrb  =  lsu_wstrb  ;
+// assign s0_wvalid =  lsu_wvalid ;
+// assign lsu_wready = s0_wready  ;
+
+// assign lsu_bresp = s0_bresp  ;
+// assign lsu_bvalid = s0_bvalid ;
+// assign s0_bready = lsu_bready;
+
+
 
 endmodule

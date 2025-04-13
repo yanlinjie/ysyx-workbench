@@ -70,6 +70,29 @@ wire                                    s0_wready                  ;
 wire                   [   1:0]         s0_bresp                   ;
 wire                                    s0_bvalid                  ;
 wire                                    s0_bready                  ;
+//***********************************UART*********************************//    
+//AR master读地址
+wire                   [  31:0]         s1_araddr                       ;
+wire                                    s1_arvalid                      ;
+wire                                    s1_arready                      ;
+//R master 读数据
+wire                   [  31:0]         s1_rdata                        ;
+wire                   [   1:0]         s1_rresp                        ;
+wire                                    s1_rvalid                       ;
+wire                                    s1_rready                       ;
+    //AW master 写地址 未完善
+wire                   [  31:0]         s1_awaddr                       ;
+wire                                    s1_awvalid                      ;
+wire                                    s1_awready                      ;
+    //W master 写数据  未完善
+wire                   [  31:0]         s1_wdata                        ;
+wire                   [   3:0]         s1_wstrb                        ;
+wire                                    s1_wvalid                       ;
+wire                                    s1_wready                       ;
+    // // B 写回复
+wire                   [   1:0]         s1_bresp                        ;
+wire                                    s1_bvalid                       ;
+wire                                    s1_bready                       ;
 
 
 riscv32 u_riscv32(
@@ -179,8 +202,29 @@ Xbar u_Xbar(
     // // B 写回复
     .s0_bresp                          (s0_bresp                  ),// 目前只会返回0
     .s0_bvalid                         (s0_bvalid                 ),//
-    .s0_bready                         (s0_bready                 ) //
+    .s0_bready                         (s0_bready                 ),//
+//***********************************UART*********************************//    
+    .s1_araddr                         (s1_araddr                 ),
+    .s1_arvalid                        (s1_arvalid                ),
+    .s1_arready                        (s1_arready                ),
 
+    .s1_rdata                          (s1_rdata                  ),
+    .s1_rresp                          (s1_rresp                  ),
+    .s1_rvalid                         (s1_rvalid                 ),
+    .s1_rready                         (s1_rready                 ),
+
+    .s1_awaddr                         (s1_awaddr                 ),
+    .s1_awvalid                        (s1_awvalid                ),
+    .s1_awready                        (s1_awready                ),
+
+    .s1_wdata                          (s1_wdata                  ),
+    .s1_wstrb                          (s1_wstrb                  ),
+    .s1_wvalid                         (s1_wvalid                 ),
+    .s1_wready                         (s1_wready                 ),
+
+    .s1_bresp                          (s1_bresp                  ),
+    .s1_bvalid                         (s1_bvalid                 ),
+    .s1_bready                         (s1_bready                 ) 
 );
 
 
@@ -226,6 +270,39 @@ u_dual_ram_template(
 
 );
 
+uart_slave #(
+    .DW                                (32                        ),
+    .AW                                (32                        ),
+    .MEM_NUM                           (32'h1000                  ) 
 
+    )
+u_uart_slave(
+    .clk                               (clk                       ),
+    .rst                               (rst                       ),
+
+//读事务总线
+    .araddr                               (s1_araddr                 ),
+    .arvalid                              (s1_arvalid                ),
+    .arready                              (s1_arready                ),
+
+    .rdata                                (s1_rdata                  ),
+    .rresp                                (s1_rresp                  ),
+    .rvalid                               (s1_rvalid                 ),// output reg rvalid,
+    .rready                               (s1_rready                 ),// input 	rready,//master 接收data ready
+
+    .awaddr                               (s1_awaddr                 ),
+    .awvalid                              (s1_awvalid                ),
+    .awready                              (s1_awready                ),
+    
+    .wdata                                (s1_wdata                  ),
+    .wstrb                                (s1_wstrb                  ),
+    .wvalid                               (s1_wvalid                 ),
+    .wready                               (s1_wready                 ),
+
+    .bresp                                (s1_bresp                  ),//未添加
+    .bvalid                               (s1_bvalid                 ),//未添加
+    .bready                               (s1_bready                 ) //未添加
+
+);
 
 endmodule

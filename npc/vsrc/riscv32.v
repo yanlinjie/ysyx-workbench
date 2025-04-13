@@ -1,7 +1,7 @@
 module riscv32(
     input                               clk                        ,
     input                               rst                        ,
-
+//***********************************IFU*********************************//    
     //AR master读地址
     output             [  31:0]         ifu_araddr                 ,//  IFU(pc) or LSU
     output                              ifu_arvalid                ,//  IFU or LSU
@@ -11,25 +11,8 @@ module riscv32(
     input              [  31:0]         ifu_rdata                  ,// to IFU(inst) or WBU(rd_data)
     input              [   1:0]         ifu_rresp                  ,// 目前只返回0
     input                               ifu_rvalid                 ,
-    output reg                          ifu_rready                 ,
-
-    //AW master 写地址 未完善
-    // output             [  31:0]         ifu_awaddr                     ,
-    // output                              ifu_awvalid                    ,
-    // input                               ifu_awready                    ,//
-
-    // //W master 写数据  未完善
-    // output             [  31:0]         ifu_wdata                      ,// LSU
-    // output             [   3:0]         ifu_wstrb                      ,
-    // output                              ifu_wvalid                     ,//  LSU
-    // input                               ifu_wready                     ,
-    
-    // // // B 写回复
-    // input              [   1:0]         ifu_bresp                      ,// 目前只会返回0
-    // input                               ifu_bvalid                     ,//
-    // output                              ifu_bready                     , //
-
-
+    output                           ifu_rready                 ,
+//***********************************LSU*********************************//    
     //AR master读地址
     output             [  31:0]         lsu_araddr                 ,//  IFU(pc) or LSU
     output                              lsu_arvalid                ,//  IFU or LSU
@@ -58,80 +41,18 @@ module riscv32(
     output                              lsu_bready                  //
 
 
-    // //读事务涉及IFU和LSU
-    // //AR master读地址
-    // output reg         [  31:0]         araddr                      ,//  IFU(pc) or LSU
-    // output reg                          arvalid                    ,//  IFU or LSU
-    // input                               arready                    ,
-
-    // //R master 读数据
-    // input              [  31:0]         rdata                      ,// to IFU(inst) or WBU(rd_data)
-    // input              [   1:0]         rresp                      ,// 目前只返回0
-    // input                               rvalid                     ,
-    // output reg                          rready                     ,
-
-    // //AW master 写地址 未完善
-    // output             [  31:0]         awaddr                     ,
-    // output                              awvalid                    ,
-    // input                               awready                    ,//
-
-    // //W master 写数据  未完善
-    // output             [  31:0]         wdata                      ,// LSU
-    // output             [   3:0]         wstrb                      ,
-    // output                              wvalid                     ,//  LSU
-    // input                               wready                     ,
-    
-    // // // B 写回复
-    // input              [   1:0]         bresp                      ,// 目前只会返回0
-    // input                               bvalid                     ,//
-    // output                              bready                      //
-
 );
 //握手总线信号
 wire                                    inst_valid                 ;
 wire                                    id_ready                   ;
 wire                                    id_valid                   ;
-wire                   [  31:0]         pc                         ;
+
 wire                   [  31:0]         latter_pc                  ;
-wire                                    read_en                    ;
-wire                   [  31:0]         next_inst                  ;
+// wire                                    read_en                    ;
+// wire                   [  31:0]         next_inst                  ;
 
 wire [4:0] csr_rd_addr;
-// reg [31:0] lsu_rdata;
-// reg [31:0] ifu_rdata;
-// reg lsu_rvalid;
-// reg ifu_rvalid;
-// reg lsu_arready;
-// reg ifu_arready;
 
-// always @(*) begin
-//     arvalid   = 1'b0;
-//     rready = 1'b0;
-
-//     if (ls_arvalid | ls_rready) begin
-//         araddr = ((ls_read_mem_addr - 32'h80000000 )>>2);//out
-//         arvalid   = ls_arvalid;//out
-//         lsu_arready = arready;
-
-//         lsu_rdata = rdata;//in
-//         lsu_rvalid = rvalid;//in
-//         rready = ls_rready;//out
-//     end else if(read_en | if_rready)  begin
-//         araddr = ((pc - 32'h80000000 )>>2);
-//         arvalid   = read_en;
-//         rready = if_rready;
-//         ifu_rdata = rdata;
-//         ifu_rvalid = rvalid;
-//         ifu_arready = arready;
-//     end 
-// end
-
-
-
-
-assign ifu_araddr = ((pc - 32'h80000000 )>>2);//out
-assign ifu_arvalid   = read_en;//out
-assign lsu_araddr = ((ls_read_mem_addr - 32'h80000000 )>>2);//out
 
 
 wire                   [  31:0]         next_pc                    ;
@@ -145,8 +66,8 @@ IFU u_IFU(
     .clk                               (clk                       ),
     .rst                               (rst                       ),
 
-    .pc                                (pc                        ),
-    .read_en                           (read_en                   ),
+    .pc                                (ifu_araddr                ),
+    .read_en                           (ifu_arvalid               ),
     .arready                           (ifu_arready               ),
 
     .next_inst                         (ifu_rdata                 ),
@@ -318,10 +239,6 @@ EXU u_EXU(
 );
 
 
-// output declaration of module LSU
-// wire ls_ready;
-// wire ls_valid;
-
 
 // output declaration of module LSU
 wire                                    ls_write_reg               ;
@@ -344,7 +261,7 @@ wire                   [  31:0]         ls_jump_next_pc            ;
 wire                   [  31:0]         ls_read_mem_addr           ;
 wire                   [  31:0]         ls_write_mem_addr          ;
 wire                                    ls_rready                  ;
-// wire                                    read_mem_falg              ;
+
 
 LSU u_LSU(
     .clk                               (clk                       ),
@@ -377,27 +294,27 @@ LSU u_LSU(
     
     //mem_bus
 
-    .ls_read_mem_addr                  (ls_read_mem_addr          ),
-    .arvalid                           (ls_arvalid                ),
+    .ls_read_mem_addr                  (lsu_araddr          ),
+    .arvalid                           (lsu_arvalid               ),
     .arready                           (lsu_arready               ),
 
     .rdata                             (lsu_rdata                 ),
     //lsu_rresp
-    .rvalid                            (lsu_rvalid                    ),
-    .rready                            (ls_rready                 ),
+    .rvalid                            (lsu_rvalid                ),
+    .rready                            (lsu_rready                ),
 
-    .ls_write_mem_addr                 (lsu_awaddr                    ),
-    .awvalid                           (lsu_awvalid                   ),
-    .awready                           (lsu_awready                   ),
+    .ls_write_mem_addr                 (lsu_awaddr                ),
+    .awvalid                           (lsu_awvalid               ),
+    .awready                           (lsu_awready               ),
 
-    .ls_mem_data                       (lsu_wdata                     ),
-    .wmask                             (lsu_wstrb                     ),
-    .wvalid                            (lsu_wvalid                    ),
-    .wready                            (lsu_wready                    ),
+    .ls_mem_data                       (lsu_wdata                 ),
+    .wmask                             (lsu_wstrb                 ),
+    .wvalid                            (lsu_wvalid                ),
+    .wready                            (lsu_wready                ),
 
-    .bresp                             (lsu_bresp                     ),//未添加
-    .bvalid                            (lsu_bvalid                    ),//未添加
-    .bready                            (lsu_bready                    ), //未添加
+    .bresp                             (lsu_bresp                 ),//未添加
+    .bvalid                            (lsu_bvalid                ),//未添加
+    .bready                            (lsu_bready                ),//未添加
 
     .ex_valid                          (ex_valid                  ),
     .wb_ready                          (wb_ready                  ),
