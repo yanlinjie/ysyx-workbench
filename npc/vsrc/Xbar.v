@@ -191,7 +191,6 @@ always @(*) begin
     // if (lsu_awvalid) begin
         
     if (lsu_awaddr == 32'ha000_03f8) begin
-        $display("111 lsu_wdata = %h",lsu_wdata);
         s1_awaddr = lsu_awaddr;
         s1_awvalid = lsu_awvalid;
         lsu_awready = s1_awready;
@@ -225,18 +224,7 @@ always @(*) begin
 
 end
 
-// assign  s0_awaddr  = ((lsu_awaddr - 32'h80000000 )>>2) ;
-// assign  s0_awvalid = lsu_awvalid;
-// assign  lsu_awready = s0_awready;
 
-// assign s0_wdata  =  lsu_wdata  ;
-// assign s0_wstrb  =  lsu_wstrb  ;
-// assign s0_wvalid =  lsu_wvalid ;
-// assign lsu_wready = s0_wready  ;
-
-// assign lsu_bresp = s0_bresp  ;
-// assign lsu_bvalid = s0_bvalid ;
-// assign s0_bready = lsu_bready;
 
 
 

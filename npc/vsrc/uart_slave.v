@@ -40,7 +40,16 @@ reg [1:0] write_state , write_next_state;
 
 assign wmask_full = { {8{wstrb[3]}}, {8{wstrb[2]}}, {8{wstrb[1]}}, {8{wstrb[0]}} };
 
-
+always @(posedge clk or posedge rst) begin
+	if(rst) begin
+		// state <= READ_IDLE;
+		write_state <= WRITE_IDLE;
+	end
+	else begin
+		// state <= next_state; 
+		write_state <= write_next_state;
+	end
+end
 
 always @(*)begin
 	case (write_state)
