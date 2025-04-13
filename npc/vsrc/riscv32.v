@@ -9,7 +9,7 @@ module riscv32(
 
     //R master 读数据
     input              [  31:0]         rdata                      ,// to IFU(inst) or WBU(rd_data)
-    input              [   1:0]         rresp                      ,//未添加
+    input              [   1:0]         rresp                      ,// 目前只返回0
     input                               rvalid                     ,
     output reg                          rready                     ,
 
@@ -25,9 +25,9 @@ module riscv32(
     input                               wready                     ,
     
     // // B 写回复
-    input              [   1:0]         bresp                      ,//未添加
-    input                               bvalid                     ,//未添加
-    output                              bready                      //未添加
+    input              [   1:0]         bresp                      ,// 目前只会返回0
+    input                               bvalid                     ,//
+    output                              bready                      //
 
 );
 //握手总线信号

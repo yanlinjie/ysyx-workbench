@@ -27,29 +27,20 @@ module dual_ram_template #(
     input  wire                         wen                        ,
     output reg                          wready                     ,
 
-    output  reg           [   1:0]         bresp                      ,
-    output  reg                            bvalid                     ,
+    output reg         [   1:0]         bresp                      ,
+    output reg                          bvalid                     ,
     input                               bready                      
 
 
 
 
 );
-// reg                    [AW-1:0]         r_addr_i_1                 ;
-// reg                    [AW-1:0]         r_addr_i_2                 ;
-// reg                    [AW-1:0]         r_addr_i_3                 ;
 
-// reg                                     arvalid_1                  ;
-// reg                                     arvalid_2                  ;
-// reg                                     arvalid_3                  ;
 
 
 reg[DW-1:0] memory[0:MEM_NUM-1];
 wire [31:0] wmask_full;//wmask展开
 
-
-// wire    [AW-1:0]   r_addr_i_d3;
-// wire       arvalid_d3;
 
 localparam READ_IDLE = 2'b00 ;
 localparam MASTER_READ_DATA = 2'b01;
@@ -76,9 +67,10 @@ end
 reg [10:0] cnt ;
 reg  [10:0] cnt_1 ;
 reg  [10:0] cnt_2 ;
-
+reg  [10:0] cnt_3 ;
 
 //test
+//延迟arready返回信号
 always @(posedge clk or posedge rst) begin
   if (rst)
     cnt <= 0;
@@ -87,7 +79,7 @@ always @(posedge clk or posedge rst) begin
   else if (cnt == 20)
     cnt <= 0;  // 成功传输后重置
 end
-
+//延迟rvalid返回信号
 always @(posedge clk or posedge rst) begin
   if (rst)
     cnt_1 <= 0;
@@ -96,14 +88,23 @@ always @(posedge clk or posedge rst) begin
   else if (cnt_1 == 20)
     cnt_1 <= 0;  // 成功传输后重置
 end
-
+//延迟wready 和 awready返回信号
 always @(posedge clk or posedge rst) begin
   if (rst)
     cnt_2 <= 0;
-  else if (state == MASTER_READ_DATA  && cnt_2 < 20)
+  else if ( awvalid  && cnt_2 < 20)
     cnt_2 <= cnt_2 + 1;
   else if (cnt_2 == 20)
     cnt_2 <= 0;  // 成功传输后重置
+end
+//延迟写回复bvalid返回信号
+always @(posedge clk or posedge rst) begin
+  if (rst)
+    cnt_3 <= 0;
+  else if (write_state == MASTER_WRITE_DATA && cnt_3 < 20)
+    cnt_3 <= cnt_3 + 1;
+  else if (cnt_3 == 20)
+    cnt_3 <= 0;  // 成功传输后重置
 end
 
 //读事务
@@ -113,12 +114,12 @@ always @(*) begin
 			arready = 1'b0;
 			rvalid =1'b0;
 			// rvalid_1 =1'b0;	
-			if(arvalid && cnt == 20) begin
-				// if(cnt == 10) begin
+			if(arvalid ) begin
+				if(cnt == 20) begin
 					r_addr = r_addr_i;//master 读地址有效，寄存地址
 					arready = 1'b1;
 					next_state = MASTER_READ_DATA; 
-				// end
+				end
 			end 
 			else next_state = READ_IDLE;
 		end 
@@ -167,19 +168,24 @@ always @(*)begin
 			bvalid = 1'b0;
 
 			if(awvalid && wen) begin
+				if(cnt_2 == 20) begin
 				awready = 1'b1;			
 				wready = 1'b1;	
-				write_next_state = MASTER_READ_DATA;
-			end else write_next_state = WRITE_IDLE;
+				write_next_state = MASTER_WRITE_DATA;
+				end 
+			end
+			else write_next_state = WRITE_IDLE;
 		end
 
-		MASTER_READ_DATA:begin
-			bresp = 2'b00;//表示写数据ok
-			bvalid = 1'b1;
-			if(bready) begin
-				write_next_state = WRITE_IDLE;
-			end else write_next_state = MASTER_READ_DATA;
-		end	
+		MASTER_WRITE_DATA:begin
+			if (cnt_3 == 20) begin
+				bresp = 2'b00;//表示写数据ok
+				bvalid = 1'b1;
+				if(bready) begin
+					write_next_state = WRITE_IDLE;
+				end else write_next_state = MASTER_WRITE_DATA;
+			end	
+		end 
 	default:begin
 	end
 	endcase	
