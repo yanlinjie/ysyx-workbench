@@ -1,4 +1,4 @@
-// import "DPI-C" function void monitor_mem_write(input int address, input byte data, input int wtype);
+import "DPI-C" function void monitor_mem_write(input int address, input byte data, input int wtype);
 module uart_slave #(
 	parameter DW = 32,
 	parameter AW = 32,
@@ -77,7 +77,7 @@ always @(posedge clk)begin
 	if(~rst && awvalid && wvalid && awready && wready)
 	begin
 		// if(awaddr == 32'h80000fe)begin
-			// monitor_mem_write(awaddr, wdata[7:0], 0);  
+			monitor_mem_write(awaddr, wdata[7:0], 0);  
 		// end
 		// else
 		// memory[awaddr] <= (wdata & wmask_full) | ( memory[awaddr] & ~wmask_full );

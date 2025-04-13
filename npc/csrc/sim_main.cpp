@@ -74,11 +74,11 @@ extern "C" void monitor_mem_read(uint32_t addr, uint32_t data) {
 
 extern "C" void monitor_mem_write(uint32_t addr, unsigned char data, uint32_t wtype) {
     const char* type_str = (wtype == 1) ? "WORD" : (wtype == 2) ? "HALF" : "BYTE";
-    // printf("[MEM WRITE] PC = 0x%08x,  address = 0x%08x, data = 0x%08x\n",top->rootp->top__DOT__ifu_araddr , addr, data);
+    printf("[MEM WRITE] PC = 0x%08x,  address = 0x%08x, data = 0x%08x\n",top->rootp->top__DOT__ifu_araddr , addr, data);
     uint32_t oaddr = addr;
     uint32_t odata = data;
-    if (oaddr == ((0xa00003f8-0x80000000 )/4)) 
-    // if (oaddr == 0xa00003f8) 
+    // if (oaddr == ((0xa00003f8-0x80000000 )/4)) 
+    if (oaddr == 0xa00003f8) 
     {
       printf("%c", odata);//直接使用printf 打印出数据
       // printf("11111111111111");
@@ -223,7 +223,7 @@ void load_bin_to_inst_mem(const char* bin_file_path) {
       // printf("%08x\n",inst);
       // 写入 instruction_mem 的 rom_mem
       top->rootp->top__DOT__u_dual_ram_template__DOT__memory[idx] = inst;
-      fprintf(reg_dump, "inst = %08x; addr = %08x ; idx = %d\n",inst , cnt ,idx);
+      // fprintf(reg_dump, "inst = %08x; addr = %08x ; idx = %d\n",inst , cnt ,idx);
       idx++;
       
       cnt = cnt +4;
@@ -297,6 +297,7 @@ int main(int argc, char** argv) {
 
 
     single_cycle();
+    fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
 
 // //debug diff
 if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){

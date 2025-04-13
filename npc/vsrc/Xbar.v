@@ -81,20 +81,20 @@ module Xbar (
     output reg                          s1_rready                  ,
 
     //AW master 写地址 未完善
-    output    reg         [  31:0]         s1_awaddr                  ,
-    output    reg                          s1_awvalid                 ,
+    output reg         [  31:0]         s1_awaddr                  ,
+    output reg                          s1_awvalid                 ,
     input                               s1_awready                 ,//
 
     //W master 写数据  未完善
-    output   reg          [  31:0]         s1_wdata                   ,// LSU
-    output    reg         [   3:0]         s1_wstrb                   ,
-    output     reg                         s1_wvalid                  ,//  LSU
+    output reg         [  31:0]         s1_wdata                   ,// LSU
+    output reg         [   3:0]         s1_wstrb                   ,
+    output reg                          s1_wvalid                  ,//  LSU
     input                               s1_wready                  ,
     
     // // B 写回复
     input              [   1:0]         s1_bresp                   ,// 目前只会返回0
     input                               s1_bvalid                  ,//
-    output    reg                          s1_bready                   //
+    output reg                          s1_bready                   //
 );
 
   localparam UART_BASE  = 32'ha0000000;
@@ -188,32 +188,40 @@ end
 
 //写数据-master：只有LSU  //写的话根据地址去选择   
 always @(*) begin
-    // if (lsu_awaddr == 32'ha000_03f8) begin
-    //     s1_awaddr = lsu_awaddr;
-    //     s1_awvalid = lsu_awvalid;
-    //     lsu_awready = s1_awready;
+    // if (lsu_awvalid) begin
+        
+    if (lsu_awaddr == 32'ha000_03f8) begin
+        $display("111 lsu_wdata = %h",lsu_wdata);
+        s1_awaddr = lsu_awaddr;
+        s1_awvalid = lsu_awvalid;
+        lsu_awready = s1_awready;
 
-    //     s1_wdata  =  lsu_wdata  ;
-    //     s1_wstrb  =  lsu_wstrb  ;
-    //     s1_wvalid =  lsu_wvalid ;
-    //     lsu_wready = s1_wready  ;
+        s1_wdata  =  lsu_wdata  ;
+        s1_wstrb  =  lsu_wstrb  ;
+        s1_wvalid =  lsu_wvalid ;
+        lsu_wready = s1_wready  ;
 
-    //     lsu_bresp = s1_bresp  ;
-    //     lsu_bvalid = s1_bvalid ;
-    //     s1_bready = lsu_bready;
-    // end else 
+        lsu_bresp = s1_bresp  ;
+        lsu_bvalid = s1_bvalid ;
+        s1_bready = lsu_bready;
+    end else 
     begin
         s0_awaddr  = ((lsu_awaddr - 32'h80000000 )>>2) ;
         s0_awvalid = lsu_awvalid;
         lsu_awready = s0_awready;
+
         s0_wdata  =  lsu_wdata  ;
         s0_wstrb  =  lsu_wstrb  ;
         s0_wvalid =  lsu_wvalid ;
         lsu_wready = s0_wready  ;
+
         lsu_bresp = s0_bresp  ;
         lsu_bvalid = s0_bvalid ;
         s0_bready = lsu_bready;
     end
+
+    // end
+
 
 end
 
