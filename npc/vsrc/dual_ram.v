@@ -25,7 +25,11 @@ module dual_ram_template #(
     input  wire        [DW-1:0]         w_data_i                   ,
     input              [   3:0]         wmask                      ,
     input  wire                         wen                        ,
-    output reg                          wready                      
+    output reg                          wready                     ,
+
+    output  reg           [   1:0]         bresp                      ,
+    output  reg                            bvalid                     ,
+    input                               bready                      
 
 
 
@@ -70,7 +74,9 @@ always @(posedge clk or posedge rst) begin
 end
 
 reg [10:0] cnt ;
-wire  [10:0] cnt_1 ;
+reg  [10:0] cnt_1 ;
+reg  [10:0] cnt_2 ;
+
 
 //test
 always @(posedge clk or posedge rst) begin
@@ -78,13 +84,27 @@ always @(posedge clk or posedge rst) begin
     cnt <= 0;
   else if (arvalid && cnt < 20)
     cnt <= cnt + 1;
-  else if (state == MASTER_READ_DATA && rready)
+  else if (cnt == 20)
     cnt <= 0;  // 成功传输后重置
 end
 
-// always @(*) begin
-// 	cnt_1 = cnt;
-// end
+always @(posedge clk or posedge rst) begin
+  if (rst)
+    cnt_1 <= 0;
+  else if (state == MASTER_READ_DATA  && cnt_1 < 20)
+    cnt_1 <= cnt_1 + 1;
+  else if (cnt_1 == 20)
+    cnt_1 <= 0;  // 成功传输后重置
+end
+
+always @(posedge clk or posedge rst) begin
+  if (rst)
+    cnt_2 <= 0;
+  else if (state == MASTER_READ_DATA  && cnt_2 < 20)
+    cnt_2 <= cnt_2 + 1;
+  else if (cnt_2 == 20)
+    cnt_2 <= 0;  // 成功传输后重置
+end
 
 //读事务
 always @(*) begin
@@ -105,19 +125,21 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;//slave 拉低接收地址ready信号
-			if (cnt == 20) begin
+			if (cnt_1 == 20) begin
 				if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
 				else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
 				else 
 				r_data_o = memory[r_addr];
+				rresp = 2'b0;
 				rvalid =1'b1;// 拉高数据有效信号
-			end
 
 			if (rready) begin //等待data握手
 					next_state = READ_IDLE;
 				end else begin
 					next_state = MASTER_READ_DATA; //如果master 的 addr有效（en） 且master接收数据ready 则发送输出，数据会在下一时钟周期输出
 				end
+			end
+
 		end 
 		default: begin
 		end
@@ -142,18 +164,21 @@ always @(*)begin
 		WRITE_IDLE:begin
 			awready = 1'b0;			
 			wready = 1'b0;		
+			bvalid = 1'b0;
 
-			if(awvalid) begin
+			if(awvalid && wen) begin
 				awready = 1'b1;			
-			end 
-			if(wen) begin
-				wready = 1'b1;		
-			end
-			write_next_state = WRITE_IDLE;
+				wready = 1'b1;	
+				write_next_state = MASTER_READ_DATA;
+			end else write_next_state = WRITE_IDLE;
 		end
 
 		MASTER_READ_DATA:begin
-			
+			bresp = 2'b00;//表示写数据ok
+			bvalid = 1'b1;
+			if(bready) begin
+				write_next_state = WRITE_IDLE;
+			end else write_next_state = MASTER_READ_DATA;
 		end	
 	default:begin
 	end
@@ -161,7 +186,7 @@ always @(*)begin
 end
 
 always @(posedge clk)begin
-	if(~rst && wen )
+	if(~rst && awvalid && wen )
 	begin
 		if(w_addr_i == 32'h80000fe)begin
 			monitor_mem_write(w_addr_i, w_data_i, 0);  
@@ -172,57 +197,7 @@ always @(posedge clk)begin
 
 end
 
-//测试总线 打拍延迟
-//读地址通道 
-// always @(posedge clk) begin
 
-// 	if(rst) begin
-// 		r_addr_i_1<=0;
-// 		r_addr_i_2<=0;
-// 		r_addr_i_3<=0;
-
-// 		arvalid_1 <=0;
-// 		arvalid_2 <=0;
-// 		arvalid_3 <=0;
-
-// 	end
-// 	else begin
-// 		r_addr_i_1 <= r_addr_i;
-// 		r_addr_i_2 <= r_addr_i_1;
-// 		r_addr_i_3 <= r_addr_i_2;
-
-// 		arvalid_1  <= arvalid;
-// 		arvalid_2  <= arvalid_1;
-// 		arvalid_3  <= arvalid_2;
-
-// 	end
-// end
-
-
-
-// delay_pipeline #(
-//     .WIDTH(1),
-//     .STAGES(3)
-// ) arvalid_delay_inst (
-//     .clk(clk),
-//     .rst(rst),
-//     .din(arvalid),
-//     .dout(arvalid_d3)         // arvalid 第 3 拍输出
-
-// );
-
-
-
-// delay_pipeline #(
-//     .WIDTH(32),
-//     .STAGES(3)
-// ) r_addr_i_delay_inst (
-//     .clk(clk),
-//     .rst(rst),
-//     .din(r_addr_i),
-//     .dout(r_addr_i_d3)         // r_addr_i 第 3 拍输出
-
-// );
 
 
 

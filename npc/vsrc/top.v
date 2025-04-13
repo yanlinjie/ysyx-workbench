@@ -94,7 +94,11 @@ u_dual_ram_template(
     .w_data_i                          (wdata                     ),
     .wmask                             (wmask                     ),
     .wen                               (wen                       ),
-    .wready                            (wready                    ) 
+    .wready                            (wready                    ) ,
+
+    .bresp                             (bresp                     ),//未添加
+    .bvalid                            (bvalid                    ),//未添加
+    .bready                            (bready                    ) //未添加
 
 );
 

@@ -47,6 +47,10 @@ module LSU(
     output reg                          wvalid                     ,
     input                               wready                     ,
 
+    // // B 写回复
+    input              [   1:0]         bresp                      ,//未添加
+    input                               bvalid                     ,//未添加
+    output reg                          bready                     ,//未添加
 
         //bus
     input                               ex_valid                   ,
@@ -64,6 +68,8 @@ localparam                              WAIT_READY = 3'd1         ;//等待下�
 localparam                              WAIT_MEM_READY   = 3'd2   ;
 localparam                              WAIT_MEM_WRITE_READY   = 3'd3;
 localparam                              WAIT_MEM_DATA_VALID   = 3'd4;
+localparam                              WAIT_MEM_BACK_VALID   = 3'd5;
+
 
 reg [2:0] state, next_state;
 reg [31:0] mem_addr_index;
@@ -91,6 +97,7 @@ always @(*) begin
             arvalid = 1'b0;
             ls_ready = 1'b1;
             ls_valid = 1'b0;
+            bready = 1'b0;
             if (ex_valid ) begin
                 if (read_mem_en) begin  //如果不需要读数据，也不需要写数据 下一状态直接跳转至WAIT_MEM_READY
                     rready = 1'b1;//同时拉高 读地址有效和接收数据准备好(这里我提前拉高了该信号)
@@ -106,7 +113,7 @@ always @(*) begin
                     if ( ~ wready &&  ~ awready) begin
                         next_state = WAIT_MEM_WRITE_READY;    
                     end else begin
-                        next_state = WAIT_READY;
+                        next_state = WAIT_MEM_BACK_VALID;
                     end
                 end 
                     else next_state = WAIT_READY;
@@ -146,10 +153,20 @@ always @(*) begin
             if (wready && awready) begin
                 ls_write_mem_addr = (mem_addr- 32'h8000_0000 ) >>2; //除去低两位，字节对齐
                 ls_mem_data = mem_data_index;//数据索引 处理后的数据
-                next_state = WAIT_READY;
+                next_state = WAIT_MEM_BACK_VALID;
             end else next_state = WAIT_MEM_WRITE_READY;
         end
 
+        WAIT_MEM_BACK_VALID:begin
+            wvalid = 1'b0;
+            awvalid = 1'b0;
+            if(bvalid)begin
+                bready = 1'b1;
+                ls_valid = bvalid;
+                if (wb_ready) next_state = IDLE;                    
+                else next_state = WAIT_MEM_BACK_VALID; 
+            end
+        end
         default: next_state = IDLE;
     endcase
 end
