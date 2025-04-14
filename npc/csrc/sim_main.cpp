@@ -61,9 +61,9 @@ uint64_t get_time() {
 extern "C" int pmem_read(uint32_t raddr) {
   // 总是读取地址为`raddr & ~0x3u`的4字节并返回
   uint64_t us = get_time();
-  // printf("Start time: %lu us\n", us);
-  if (raddr == 0x28000012)    return (uint32_t)us;//{ 返回当前时间 };
-  else if(raddr == 0x28000013 ) return us >> 32;
+  // printf("Start time: %lu us\n", us);//a000_0048
+  if (raddr == 0x8000012)    return (uint32_t)us;//{ 返回当前时间 };
+  else if(raddr == 0x8000013 ) return us >> 32;
   return 0;
 }
 
@@ -283,13 +283,14 @@ int main(int argc, char** argv) {
 
 
 
-// //debug diff
-  uint32_t prev_inst = 0;  // 初始化为0或其他非法指令
-  cpu.pc = top->rootp->top__DOT__ifu_araddr;
-  for (int i = 0; i < 32; ++i)
-    cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
-  long program_size = load_program(argv[1]);
-  init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
+// // //debug diff
+//   uint32_t prev_inst = 0;  // 初始化为0或其他非法指令
+//   cpu.pc = top->rootp->top__DOT__ifu_araddr;
+//   for (int i = 0; i < 32; ++i)
+//     cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
+//   long program_size = load_program(argv[1]);
+//   init_difftest("/home/ylj/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", program_size, 0);
+ 
   int cycle_count = 0;
   while (true) {
 
@@ -298,23 +299,23 @@ int main(int argc, char** argv) {
     // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
 
 // //debug diff
-if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
-    // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
+// if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
+//     // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
 
-    ring_buffer_push(top->rootp->top__DOT__ifu_araddr, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
-    cpu.pc = top->rootp->top__DOT__ifu_araddr;
-    for (int i = 0; i < 32; ++i)
-      cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
-    difftest_regcpy(&ref, DIFFTEST_TO_DUT);
-    //ref 是正确端 dut是
-    if (!isa_difftest_checkregs(&ref, &cpu)) {
-      ring_buffer_print();  // 👈 打印 ring buffer
-      // printf("cycle_count = %d\n", cycle_count);
-      exit(1);
-    }
-    difftest_exec(1);
-}
-prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
+//     ring_buffer_push(top->rootp->top__DOT__ifu_araddr, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
+//     cpu.pc = top->rootp->top__DOT__ifu_araddr;
+//     for (int i = 0; i < 32; ++i)
+//       cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
+//     difftest_regcpy(&ref, DIFFTEST_TO_DUT);
+//     //ref 是正确端 dut是
+//     if (!isa_difftest_checkregs(&ref, &cpu)) {
+//       ring_buffer_print();  // 👈 打印 ring buffer
+//       // printf("cycle_count = %d\n", cycle_count);
+//       exit(1);
+//     }
+//     difftest_exec(1);
+// }
+// prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
 
 
   }

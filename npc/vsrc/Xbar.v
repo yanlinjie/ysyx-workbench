@@ -188,8 +188,6 @@ end
 
 //写数据-master：只有LSU  //写的话根据地址去选择   
 always @(*) begin
-    // if (lsu_awvalid) begin
-        
     if (lsu_awaddr == 32'ha000_03f8) begin
         s1_awaddr = lsu_awaddr;
         s1_awvalid = lsu_awvalid;
@@ -218,9 +216,6 @@ always @(*) begin
         lsu_bvalid = s0_bvalid ;
         s0_bready = lsu_bready;
     end
-
-    // end
-
 
 end
 

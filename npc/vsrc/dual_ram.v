@@ -131,8 +131,8 @@ always @(*) begin
 		MASTER_READ_DATA: begin
 			arready = 1'b0;//slave 拉低接收地址ready信号
 			if (cnt_1 == DELAY_RVALID) begin
-				if(r_addr == 32'h28000012) r_data_o = pmem_read (r_addr);
-				else if(r_addr == 32'h28000013) r_data_o = pmem_read (r_addr);
+				if(r_addr == 32'h8000012) r_data_o = pmem_read (r_addr);
+				else if(r_addr == 32'h8000013) r_data_o = pmem_read (r_addr);
 				else 
 				r_data_o = memory[r_addr];
 				rresp = 2'b0;
