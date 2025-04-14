@@ -1,4 +1,4 @@
-// import "DPI-C" function int pmem_read(input int raddr);
+import "DPI-C" function int pmem_read(input int raddr);
 
 module clint_slave#(
 	parameter DW = 32,
@@ -15,20 +15,20 @@ module clint_slave#(
     output reg         [DW-1:0]         rdata                    ,
     output reg         [   1:0]         rresp                    ,
     output reg                          rvalid                   ,
-    input                               rready                   ,
+    input                               rready                   
 
-    input  wire        [AW-1:0]         awaddr                   ,
-    input                               awvalid                  ,
-    output reg                          awready                  ,
+    // input  wire        [AW-1:0]         awaddr                   ,
+    // input                               awvalid                  ,
+    // output reg                          awready                  ,
 
-    input  wire        [DW-1:0]         wdata                    ,
-    input              [   3:0]         wstrb                    ,
-    input  wire                         wvalid                   ,
-    output reg                          wready                   ,
+    // input  wire        [DW-1:0]         wdata                    ,
+    // input              [   3:0]         wstrb                    ,
+    // input  wire                         wvalid                   ,
+    // output reg                          wready                   ,
 
-    output reg         [   1:0]         bresp                    ,
-    output reg                          bvalid                   ,
-    input                               bready                    
+    // output reg         [   1:0]         bresp                    ,
+    // output reg                          bvalid                   ,
+    // input                               bready                    
 );
 //目前该模块只读   
 reg[DW-1:0] memory[0:MEM_NUM-1];
@@ -62,8 +62,8 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;//slave 拉低接收地址ready信号
-				// if(r_addr == 32'h8000012) rdata = pmem_read (r_addr);
-				// else if(r_addr == 32'h8000013) rdata = pmem_read (r_addr);
+				if(r_addr == 32'ha000_0048) rdata = pmem_read (r_addr);
+				else if(r_addr == 32'ha000_004c) rdata = pmem_read (r_addr);
 				rresp = 2'b0;
 				rvalid =1'b1;// 拉高数据有效信号
 

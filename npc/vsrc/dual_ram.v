@@ -1,5 +1,3 @@
-// import "DPI-C" function void monitor_mem_write(input int address, input byte data, input int wtype);
-import "DPI-C" function int pmem_read(input int raddr);
 module dual_ram_template #(
 	parameter DW = 32,
 	parameter AW = 32,
@@ -130,10 +128,6 @@ always @(*) begin
 
 		MASTER_READ_DATA: begin
 			arready = 1'b0;//slave 拉低接收地址ready信号
-			// if (cnt_1 == DELAY_RVALID) begin
-				if(r_addr == 32'h8000012) r_data_o = pmem_read (r_addr);
-				else if(r_addr == 32'h8000013) r_data_o = pmem_read (r_addr);
-				else 
 				r_data_o = memory[r_addr];
 				rresp = 2'b0;
 				rvalid =1'b1;// 拉高数据有效信号

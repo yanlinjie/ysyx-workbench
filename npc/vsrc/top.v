@@ -285,37 +285,37 @@ u_uart_slave(
     .bready                            (s1_bready                 ) 
 );
 
-clint_slave #(
-    .DW                                (32                        ),
-    .AW                                (32                        ),
-    .MEM_NUM                           (32'h1_0000                  ) 
+// clint_slave #(
+//     .DW                                (32                        ),
+//     .AW                                (32                        ),
+//     .MEM_NUM                           (32'h1_0000                  ) 
 
-    )
-u_clint_slave(
-    .clk                               (clk                       ),
-    .rst                               (rst                       ),
+//     )
+// u_clint_slave(
+//     .clk                               (clk                       ),
+//     .rst                               (rst                       ),
 
-    .araddr                            (s2_araddr                 ),
-    .arvalid                           (s2_arvalid                ),
-    .arready                           (s2_arready                ),
+//     .araddr                            (s2_araddr                 ),
+//     .arvalid                           (s2_arvalid                ),
+//     .arready                           (s2_arready                ),
 
-    .rdata                             (s2_rdata                  ),
-    .rresp                             (s2_rresp                  ),
-    .rvalid                            (s2_rvalid                 ),
-    .rready                            (s2_rready                 ),
+//     .rdata                             (s2_rdata                  ),
+//     .rresp                             (s2_rresp                  ),
+//     .rvalid                            (s2_rvalid                 ),
+//     .rready                            (s2_rready                 ),
 
-    .awaddr                            (s2_awaddr                 ),
-    .awvalid                           (s2_awvalid                ),
-    .awready                           (s2_awready                ),
+//     .awaddr                            (s2_awaddr                 ),
+//     .awvalid                           (s2_awvalid                ),
+//     .awready                           (s2_awready                ),
     
-    .wdata                             (s2_wdata                  ),
-    .wstrb                             (s2_wstrb                  ),
-    .wvalid                            (s2_wvalid                 ),
-    .wready                            (s2_wready                 ),
+//     .wdata                             (s2_wdata                  ),
+//     .wstrb                             (s2_wstrb                  ),
+//     .wvalid                            (s2_wvalid                 ),
+//     .wready                            (s2_wready                 ),
 
-    .bresp                             (s2_bresp                  ),
-    .bvalid                            (s2_bvalid                 ),
-    .bready                            (s2_bready                 ) 
-);
+//     .bresp                             (s2_bresp                  ),
+//     .bvalid                            (s2_bvalid                 ),
+//     .bready                            (s2_bready                 ) 
+// );
 
 endmodule

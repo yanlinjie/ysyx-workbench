@@ -62,8 +62,8 @@ extern "C" int pmem_read(uint32_t raddr) {
   // 总是读取地址为`raddr & ~0x3u`的4字节并返回
   uint64_t us = get_time();
   // printf("Start time: %lu us\n", us);//a000_0048
-  if (raddr == 0x8000012)    return (uint32_t)us;//{ 返回当前时间 };
-  else if(raddr == 0x8000013 ) return us >> 32;
+  if (raddr == 0xa0000048)    return (uint32_t)us;//{ 返回当前时间 };
+  else if(raddr == 0xa000004c ) return us >> 32;
   return 0;
 }
 
@@ -294,6 +294,7 @@ int main(int argc, char** argv) {
   int cycle_count = 0;
   while (true) {
 
+ 
 
     single_cycle();
     // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);

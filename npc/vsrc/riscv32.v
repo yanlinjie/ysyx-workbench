@@ -94,9 +94,9 @@ always @(*) begin
         arvalid  = 1'b0;
         rready = 1'b0;
     if (lsu_arvalid | lsu_rready) begin
-        if (lsu_araddr == 32'ha000_0048) begin
+        if (lsu_araddr == 32'ha000_0048 | lsu_araddr == 32'ha000_004c) begin
             // $display("111");
-            s2_araddr = ((lsu_araddr - 32'h80000000 )>>2) ;
+            s2_araddr = lsu_araddr ;
             s2_arvalid   = lsu_arvalid;
             lsu_arready = s2_arready;
 
@@ -142,20 +142,20 @@ u_clint_slave(
     .rdata                             (s2_rdata                  ),
     .rresp                             (s2_rresp                  ),
     .rvalid                            (s2_rvalid                 ),
-    .rready                            (s2_rready                 ),
+    .rready                            (s2_rready                 )
 
-    .awaddr                            (s2_awaddr                 ),
-    .awvalid                           (s2_awvalid                ),
-    .awready                           (s2_awready                ),
+    // .awaddr                            (s2_awaddr                 ),
+    // .awvalid                           (s2_awvalid                ),
+    // .awready                           (s2_awready                ),
     
-    .wdata                             (s2_wdata                  ),
-    .wstrb                             (s2_wstrb                  ),
-    .wvalid                            (s2_wvalid                 ),
-    .wready                            (s2_wready                 ),
+    // .wdata                             (s2_wdata                  ),
+    // .wstrb                             (s2_wstrb                  ),
+    // .wvalid                            (s2_wvalid                 ),
+    // .wready                            (s2_wready                 ),
 
-    .bresp                             (s2_bresp                  ),
-    .bvalid                            (s2_bvalid                 ),
-    .bready                            (s2_bready                 ) 
+    // .bresp                             (s2_bresp                  ),
+    // .bvalid                            (s2_bvalid                 ),
+    // .bready                            (s2_bready                 ) 
 );
 
 IFU u_IFU(
