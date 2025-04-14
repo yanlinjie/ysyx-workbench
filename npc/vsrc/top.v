@@ -3,45 +3,33 @@ module top(
     input                               rst                         
 );
 
-
-
+//**************************cpu-core************************//
     //AR master读地址
-wire                   [  31:0]         ifu_araddr                 ;
-wire                                    ifu_arvalid                ;
-wire                                    ifu_arready                ;
+wire                   [  31:0]         araddr                 ;
+wire                                    arvalid                ;
+wire                                    arready                ;
 
     //R master 读数据
-wire                   [  31:0]         ifu_rdata                  ;
-wire                   [   1:0]         ifu_rresp                  ;
-wire                                    ifu_rvalid                 ;
-wire                                    ifu_rready                 ;
-
-    //AR master读地址
-wire                   [  31:0]         lsu_araddr                 ;
-wire                                    lsu_arvalid                ;
-wire                                    lsu_arready                ;
-
-    //R master 读数据
-wire                   [  31:0]         lsu_rdata                  ;
-wire                   [   1:0]         lsu_rresp                  ;
-wire                                    lsu_rvalid                 ;
-wire                                    lsu_rready                 ;
+wire                   [  31:0]         rdata                  ;
+wire                   [   1:0]         rresp                  ;
+wire                                    rvalid                 ;
+wire                                    rready                 ;
 
     //AW master 写地址 未完善
-wire                   [  31:0]         lsu_awaddr                 ;
-wire                                    lsu_awvalid                ;
-wire                                    lsu_awready                ;
+wire                   [  31:0]         awaddr                 ;
+wire                                    awvalid                ;
+wire                                    awready                ;
 
     //W master 写数据  未完善
-wire                   [  31:0]         lsu_wdata                  ;
-wire                   [   3:0]         lsu_wstrb                  ;
-wire                                    lsu_wvalid                 ;
-wire                                    lsu_wready                 ;
+wire                   [  31:0]         wdata                  ;
+wire                   [   3:0]         wstrb                  ;
+wire                                    wvalid                 ;
+wire                                    wready                 ;
     
     // // B 写回复
-wire                   [   1:0]         lsu_bresp                  ;
-wire                                    lsu_bvalid                 ;
-wire                                    lsu_bready                 ;
+wire                   [   1:0]         bresp                  ;
+wire                                    bvalid                 ;
+wire                                    bready                 ;
 
 //***********************************RAM*********************************//    
     //AR master读地址
@@ -122,82 +110,53 @@ riscv32 u_riscv32(
     .clk                               (clk                       ),
     .rst                               (rst                       ),
 
-    .ifu_araddr                        (ifu_araddr                ),
-    .ifu_arvalid                       (ifu_arvalid               ),
-    .ifu_arready                       (ifu_arready               ),
+    .araddr                            (araddr                    ),
+    .arvalid                           (arvalid                   ),
+    .arready                           (arready                   ),
 
-    .ifu_rdata                         (ifu_rdata                 ),
-    .ifu_rresp                         (ifu_rresp                 ),
-    .ifu_rvalid                        (ifu_rvalid                ),
-    .ifu_rready                        (ifu_rready                ),
+    .rdata                             (rdata                     ),
+    .rresp                             (rresp                     ),
+    .rvalid                            (rvalid                    ),
+    .rready                            (rready                    ),
 
+    .awaddr                            (awaddr                    ),
+    .awvalid                           (awvalid                   ),
+    .awready                           (awready                   ),
 
-    .lsu_araddr                        (lsu_araddr                ),
-    .lsu_arvalid                       (lsu_arvalid               ),
-    .lsu_arready                       (lsu_arready               ),
-
-    .lsu_rdata                         (lsu_rdata                 ),
-    .lsu_rresp                         (lsu_rresp                 ),
-    .lsu_rvalid                        (lsu_rvalid                ),
-    .lsu_rready                        (lsu_rready                ),
-
-    .lsu_awaddr                        (lsu_awaddr                ),
-    .lsu_awvalid                       (lsu_awvalid               ),
-    .lsu_awready                       (lsu_awready               ),
-
-    .lsu_wdata                         (lsu_wdata                 ),
-    .lsu_wstrb                         (lsu_wstrb                 ),
-    .lsu_wvalid                        (lsu_wvalid                ),
-    .lsu_wready                        (lsu_wready                ),
+    .wdata                             (wdata                     ),
+    .wstrb                             (wstrb                     ),
+    .wvalid                            (wvalid                    ),
+    .wready                            (wready                    ),
     
-    .lsu_bresp                         (lsu_bresp                 ),
-    .lsu_bvalid                        (lsu_bvalid                ),
-    .lsu_bready                        (lsu_bready                ) 
-
-
+    .bresp                             (bresp                     ),
+    .bvalid                            (bvalid                    ),
+    .bready                            (bready                    ) 
 );
 
 
 Xbar u_Xbar(
-//***********************************IFU*********************************//    
-    //AR master读地址
-    .ifu_araddr                        (ifu_araddr                ),
-    .ifu_arvalid                       (ifu_arvalid               ),
-    .ifu_arready                       (ifu_arready               ),
+    .araddr                        (araddr                ),
+    .arvalid                       (arvalid               ),
+    .arready                       (arready               ),
 
-    //R master 读数据
-    .ifu_rdata                         (ifu_rdata                 ),
-    .ifu_rresp                         (ifu_rresp                 ),
-    .ifu_rvalid                        (ifu_rvalid                ),
-    .ifu_rready                        (ifu_rready                ),
+    .rdata                         (rdata                 ),
+    .rresp                         (rresp                 ),
+    .rvalid                        (rvalid                ),
+    .rready                        (rready                ),
 
-//***********************************LSU*********************************//    
-        //AR master读地址
-    .lsu_araddr                        (lsu_araddr                ),
-    .lsu_arvalid                       (lsu_arvalid               ),
-    .lsu_arready                       (lsu_arready               ),
 
-    //R master 读数据
-    .lsu_rdata                         (lsu_rdata                 ),
-    .lsu_rresp                         (lsu_rresp                 ),
-    .lsu_rvalid                        (lsu_rvalid                ),
-    .lsu_rready                        (lsu_rready                ),
+    .awaddr                        (awaddr                ),
+    .awvalid                       (awvalid               ),
+    .awready                       (awready               ),
 
-    //AW master 写地址 未完善
-    .lsu_awaddr                        (lsu_awaddr                ),
-    .lsu_awvalid                       (lsu_awvalid               ),
-    .lsu_awready                       (lsu_awready               ),
-
-    //W master 写数据  未完善
-    .lsu_wdata                         (lsu_wdata                 ),
-    .lsu_wstrb                         (lsu_wstrb                 ),
-    .lsu_wvalid                        (lsu_wvalid                ),
-    .lsu_wready                        (lsu_wready                ),
+    .wdata                         (wdata                 ),
+    .wstrb                         (wstrb                 ),
+    .wvalid                        (wvalid                ),
+    .wready                        (wready                ),
     
-    // // B 写回复
-    .lsu_bresp                         (lsu_bresp                 ),
-    .lsu_bvalid                        (lsu_bvalid                ),
-    .lsu_bready                        (lsu_bready                ),
+    .bresp                         (bresp                 ),
+    .bvalid                        (bvalid                ),
+    .bready                        (bready                ),
 
 //***********************************RAM*********************************//    
     //AR master读地址

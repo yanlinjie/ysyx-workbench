@@ -74,7 +74,7 @@ extern "C" void monitor_mem_read(uint32_t addr, uint32_t data) {
 
 extern "C" void monitor_mem_write(uint32_t addr, unsigned char data, uint32_t wtype) {
     const char* type_str = (wtype == 1) ? "WORD" : (wtype == 2) ? "HALF" : "BYTE";
-    // printf("[MEM WRITE] PC = 0x%08x,  address = 0x%08x, data = 0x%08x\n",top->rootp->top__DOT__ifu_araddr , addr, data);
+    // printf("[MEM WRITE] PC = 0x%08x,  address = 0x%08x, data = 0x%08x\n",top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr , addr, data);
     uint32_t oaddr = addr;
     uint32_t odata = data;
     if (oaddr == 0xa00003f8) 
@@ -253,9 +253,9 @@ extern "C" void dpi_exit_simulation() {
   int state = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[10];
     printf("[INFO] ebreak instruction encountered. Ending simulation.");
     if (state)
-    printf("\033[1;31mHIT BAD TRAP\033[0m at pc = 0x%08x\n",top->rootp->top__DOT__ifu_araddr);  // 红色
+    printf("\033[1;31mHIT BAD TRAP\033[0m at pc = 0x%08x\n",top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr);  // 红色
   else
-    printf("\033[1;32mHIT GOOD TRAP\033[0m at pc = 0x%08x\n", top->rootp->top__DOT__ifu_araddr); // 绿色
+    printf("\033[1;32mHIT GOOD TRAP\033[0m at pc = 0x%08x\n", top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr); // 绿色
     delete top;
     delete tfp;
   exit(state);
@@ -285,7 +285,7 @@ int main(int argc, char** argv) {
 
 // // //debug diff
 //   uint32_t prev_inst = 0;  // 初始化为0或其他非法指令
-//   cpu.pc = top->rootp->top__DOT__ifu_araddr;
+//   cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr;
 //   for (int i = 0; i < 32; ++i)
 //     cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
 //   long program_size = load_program(argv[1]);
@@ -296,14 +296,14 @@ int main(int argc, char** argv) {
 
 
     single_cycle();
-    // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
+    // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
 
 // //debug diff
 // if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
-//     // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
+//     // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
 
-//     ring_buffer_push(top->rootp->top__DOT__ifu_araddr, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
-//     cpu.pc = top->rootp->top__DOT__ifu_araddr;
+//     ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
+//     cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr;
 //     for (int i = 0; i < 32; ++i)
 //       cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
 //     difftest_regcpy(&ref, DIFFTEST_TO_DUT);
