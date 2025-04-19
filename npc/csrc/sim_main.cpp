@@ -1,7 +1,7 @@
 #include "verilated.h"
 #include "verilated_vcd_c.h"
-#include "Vtop.h"
-#include "Vtop__Syms.h"
+#include "VysyxSoCFull.h"
+#include "VysyxSoCFull__Syms.h"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -12,6 +12,7 @@
 //time
 #include <time.h>
 #include <stdint.h>
+#include <cstdio> 
 
 // NEMU头文件
 extern "C" {
@@ -21,20 +22,32 @@ extern "C" {
   #include <difftest-def.h>
 }
 
+#define WAVE_ON 
+
 #define RESET_VECTOR 0x80000000
 #define ROM_SIZE     40960000
-#define PC_START     0x80000000
+#define  MROM_BASE  0x20000000
+#define  MROM_SIZE  0x1000        // 4KB
+#define  MROM_WORDS  MROM_SIZE / 4 // 1024 words
 
+uint32_t mrom[MROM_WORDS] = {
+  // 0x100007b7, 
+  // 0x04100713, 
+  // 0x00e78023, 
+  // 0x00a00713, 
+  // 0x00e78023,
+  // 0x0000006f,
+};
 
-
-// VerilatedVcdC *tfp = nullptr;   // 2. 声明全局 tfp
+#ifdef WAVE_ON
 vluint64_t main_time = 0;       // 3. 声明主时间变量
 double sc_time_stamp() { return main_time; }
-FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
-
-Vtop* top = new Vtop();
 VerilatedVcdC* tfp = new VerilatedVcdC();  // VCD 波形对象
+#endif
 
+VysyxSoCFull* top = new VysyxSoCFull();
+
+FILE* reg_dump = fopen("regdump.txt", "w");  // 打开输出文件（写入模式）
 uint32_t rom_mem[ROM_SIZE] = {0};
 
 typedef struct {
@@ -57,6 +70,24 @@ uint64_t get_time() {
   return now_us - start_us;  // 返回相对时间
 }
 
+extern "C" void flash_read(int32_t addr, int32_t *data) { assert(0); }
+extern "C" void mrom_read(int32_t addr, int32_t *data) {
+  // 范围检查
+  if ((uint32_t)addr < MROM_BASE || (uint32_t)addr >= MROM_BASE + MROM_SIZE) {
+      printf("[MROM] Error: Address 0x%08x out of range\n", addr);
+      *data = 0;
+      assert(0);
+  }
+
+  if (addr % 4 != 0) {
+      printf("[MROM] Error: Unaligned access at 0x%08x\n", addr);
+      *data = 0;
+      assert(0);
+  }
+
+  uint32_t index = ((uint32_t)addr - MROM_BASE) >> 2;
+  *data = (int32_t)mrom[index];
+}
 
 extern "C" int pmem_read(uint32_t raddr) {
   // 总是读取地址为`raddr & ~0x3u`的4字节并返回
@@ -74,7 +105,7 @@ extern "C" void monitor_mem_read(uint32_t addr, uint32_t data) {
 
 extern "C" void monitor_mem_write(uint32_t addr, unsigned char data, uint32_t wtype) {
     const char* type_str = (wtype == 1) ? "WORD" : (wtype == 2) ? "HALF" : "BYTE";
-    // printf("[MEM WRITE] PC = 0x%08x,  address = 0x%08x, data = 0x%08x\n",top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr , addr, data);
+    // printf("[MEM WRITE] PC = 0x%08x,  address = 0x%08x, data = 0x%08x\n",top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_araddr , addr, data);
     uint32_t oaddr = addr;
     uint32_t odata = data;
     if (oaddr == 0xa00003f8) 
@@ -150,24 +181,29 @@ bool isa_difftest_checkregs(CPU_state *ref_r, CPU_state *dut) {
     printf("\nPC        : REF = 0x%08x, DUT = 0x%08x", ref_r->pc, dut->pc);
     if (ref_r->pc != dut->pc) printf("   <--- ❌");
     printf("\n==========================================\n");
-    printf("inst = %x\n" ,top->rootp->top__DOT__u_dual_ram_template__DOT__memory[253]);
   }
 
   return ok;
 }
 
 static void single_cycle() {
-  top->clk = 1; top->eval();
-  // tfp->dump(main_time++);
-  top->clk = 0; top->eval();
-  // tfp->dump(main_time++);
+#ifdef WAVE_ON
+  top->clock = 1; top->eval();
+  tfp->dump(main_time++);
+  top->clock = 0; top->eval();
+  tfp->dump(main_time++);
+
+#else 
+  top->clock = 1; top->eval();
+  top->clock = 0; top->eval();
+#endif
 
 }
 
 static void rst(int n) {
-  top->rst = 1;
+  top->reset = 1;
   while (n--) single_cycle();
-  top->rst = 0;
+  top->reset = 0;
 }
 
 
@@ -197,37 +233,18 @@ int load_program(const char* filename) {
 
 
 
-void load_bin_to_inst_mem(const char* bin_file_path) {
-  std::ifstream file(bin_file_path, std::ios::binary);
-  if (!file) {
-      std::cerr << "Failed to open .bin file: " << bin_file_path << std::endl;
-      exit(1);
+void load_mrom_bin(const char *filename) {
+  FILE *f = fopen(filename, "rb");
+  if (!f) {
+      perror("[MROM] Failed to open bin file");
+      exit(EXIT_FAILURE);
   }
 
-  int idx = 0;
-  int cnt = 0;
-  char bytes[4];
-  while (file.read(bytes, 4)) {
-      if (idx >= 40960000) {
-          std::cerr << "Error: bin file too large for instruction memory!" << std::endl;
-          break;
-      }
+  size_t read_words = fread(mrom, sizeof(uint32_t), MROM_WORDS, f);
+  fclose(f);
 
-      // Little-endian -> 32-bit word
-      uint32_t inst = (uint8_t)bytes[0] |
-                      ((uint8_t)bytes[1] << 8) |
-                      ((uint8_t)bytes[2] << 16) |
-                      ((uint8_t)bytes[3] << 24);
-      // printf("%08x\n",inst);
-      // 写入 instruction_mem 的 rom_mem
-      top->rootp->top__DOT__u_dual_ram_template__DOT__memory[idx] = inst;
-      // fprintf(reg_dump, "inst = %08x; addr = %08x ; idx = %d\n",inst , cnt ,idx);
-      idx++;
-      
-      cnt = cnt +4;
-  }
-
-  std::cout << "Loaded " << idx << " instructions into INSTRUCTION_MEM.rom_mem[]" << std::endl;
+  printf("[MROM] Loaded %zu words (%zu bytes) from %s\n",
+         read_words, read_words * sizeof(uint32_t), filename);
 }
 
 
@@ -250,34 +267,43 @@ void init_difftest(const char* ref_so_file, long img_size, int port) {
 }
 
 extern "C" void dpi_exit_simulation() {
-  int state = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[10];
+  int state = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__u_reg_file__DOT__regs[10];
     printf("[INFO] ebreak instruction encountered. Ending simulation.");
     if (state)
-    printf("\033[1;31mHIT BAD TRAP\033[0m at pc = 0x%08x\n",top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr);  // 红色
+    printf("\033[1;31mHIT BAD TRAP\033[0m at pc = 0x%08x\n",top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_araddr);  // 红色
   else
-    printf("\033[1;32mHIT GOOD TRAP\033[0m at pc = 0x%08x\n", top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr); // 绿色
-    delete top;
-    delete tfp;
+    printf("\033[1;32mHIT GOOD TRAP\033[0m at pc = 0x%08x\n", top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_araddr); // 绿色
+
+  printf(" \033[1;32mpromgram stop!\033[0m\n");
+
+#ifdef WAVE_ON
+  tfp->close();
+  delete tfp;
+#endif
+  delete top;
   exit(state);
 }
 
 static void welcome() {
-  printf("Welcome to -NPC!\n");
+  printf("\033[1;31mWelcome to -NPC!\033[0m \n");
 }
 
 int main(int argc, char** argv) {
+  std::setvbuf(stdout, NULL, _IONBF, 0);  // 禁用 stdout 缓冲 打印输出有缓冲区！
 
-  // if (reg_dump == nullptr) {
-  //     perror("Failed to open regdump.txt");
-  //     exit(1);
-  // }
-  // Verilated::traceEverOn(true);
-  // // VerilatedVcdC *tfp = new VerilatedVcdC;
-  // tfp = new VerilatedVcdC;
-  // top->trace(tfp, 99);      // 99 是层级深度
-  // tfp->open("wave.vcd");    // 波形文件名
+#ifdef WAVE_ON
+  Verilated::traceEverOn(true);
+  tfp = new VerilatedVcdC;
+  top->trace(tfp, 99);      // 99 是层级深度
+  tfp->open("wave.vcd");    // 波形文件名
+#endif
+
+  // Verilated::commandArgs(argc, argv);
+
   welcome();
-  load_bin_to_inst_mem(argv[1]);  // 在 reset 之后，仿真主循环之前
+  load_mrom_bin(argv[1]);
+  // load_mrom_bin("/home/ylj/ysyx-workbench/test/uart_test/image.bin");
+
 
   rst(10);
 
@@ -285,7 +311,7 @@ int main(int argc, char** argv) {
 
 // // //debug diff
 //   uint32_t prev_inst = 0;  // 初始化为0或其他非法指令
-//   cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr;
+//   cpu.pc = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_araddr;
 //   for (int i = 0; i < 32; ++i)
 //     cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
 //   long program_size = load_program(argv[1]);
@@ -297,14 +323,15 @@ int main(int argc, char** argv) {
  
 
     single_cycle();
-    // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
+    // printf("cpu.pc = 0x%08x inst = 0x%08x\n", top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_araddr  , top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_rdata);
+    // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_araddr , top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_rdata);
 
 // //debug diff
 // if (top->rootp->top__DOT__u_riscv32__DOT__inst != prev_inst){
-//     // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
+//     // fprintf(reg_dump,"cpu.pc = 0x%08x inst = 0x%08x\n", (top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_araddr - 0x80000000)/4 , top->rootp->top__DOT__u_riscv32__DOT__inst);
 
-//     ring_buffer_push(top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
-//     cpu.pc = top->rootp->top__DOT__u_riscv32__DOT__ifu_araddr;
+//     ring_buffer_push(top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_araddr, top->rootp->top__DOT__u_riscv32__DOT__inst);  // 👈 加入 ring buffer
+//     cpu.pc = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ifu_araddr;
 //     for (int i = 0; i < 32; ++i)
 //       cpu.gpr[i] = top->rootp->top__DOT__u_riscv32__DOT__u_reg_file__DOT__regs[i];
 //     difftest_regcpy(&ref, DIFFTEST_TO_DUT);
@@ -317,12 +344,22 @@ int main(int argc, char** argv) {
 //     difftest_exec(1);
 // }
 // prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
-
+if(++cycle_count == 4000000)
+{
+#ifdef WAVE_ON
+  tfp->close();
+  delete tfp;
+#endif
+  delete top;
+  exit(1);
+}
 
   }
-  // tfp->close();
-  // delete top;
-  // delete tfp;
-  // return -1;
+#ifdef WAVE_ON
+  tfp->close();
+  delete tfp;
+#endif
+  delete top;
+  exit(1);
 
 }

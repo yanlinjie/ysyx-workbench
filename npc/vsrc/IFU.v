@@ -27,6 +27,8 @@ localparam IDLE             = 3'd0;
 localparam WAIT_READY       = 3'd1;
 localparam BOOT             = 3'd2;//初始复位状态
 localparam WAIT_MEM_READY   = 3'd3;
+localparam RST   = 3'd4;
+
 
 
 reg                    [   2:0]         state                      ;
@@ -35,7 +37,7 @@ reg                    [   2:0]         next_state                 ;
     // 状态更新逻辑
 always @(posedge clk or posedge rst) begin
     if (rst)
-        state <= BOOT;
+        state <= RST;
     else
         state <= next_state;
 end
@@ -43,6 +45,13 @@ end
     // 状态转移判断
 always @(*) begin
     case (state)
+        RST:begin
+            pc = next_pc;       //addr
+            inst_valid = 1'b0;   //
+            read_en = 1'b0;     //valid 
+            next_state = BOOT;
+            
+        end
         BOOT: begin
             inst_valid = 1'b0;   //
             rready = 1'b1;       //master read ready

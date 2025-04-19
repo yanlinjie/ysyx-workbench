@@ -108,7 +108,7 @@ always @(*) begin
                 end else if (write_mem_en) begin
                         wvalid = 1'b1;
                         awvalid = 1'b1;
-                        ls_write_mem_addr = mem_addr; //除去低两位，字节对齐
+                        ls_write_mem_addr = {mem_addr[31:2],2'b0} ; //除去低两位，字节对齐
                         ls_mem_data = mem_data_index;//数据索引 处理后的数据
                     if ( ~ wready &&  ~ awready) begin
                         next_state = WAIT_MEM_WRITE_READY;    
@@ -151,7 +151,7 @@ always @(*) begin
                 wvalid = 1'b1;
                 awvalid = 1'b1;
             if (wready && awready) begin
-                ls_write_mem_addr = mem_addr; //除去低两位，字节对齐
+                ls_write_mem_addr =  {mem_addr[31:2],2'b0}; //除去低两位，字节对齐
                 ls_mem_data = mem_data_index;//数据索引 处理后的数据
                 next_state = WAIT_MEM_BACK_VALID;
             end else next_state = WAIT_MEM_WRITE_READY;

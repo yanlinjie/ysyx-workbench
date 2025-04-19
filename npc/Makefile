@@ -1,13 +1,19 @@
-TOPNAME = top
+TOPNAME = ysyxSoCFull
 INC_PATH := ./vsrc \
-            /home/ylj/ysyx-workbench/nemu/include
+			/home/ylj/ysyx-workbench/nemu/include \
+			/home/ylj/ysyx-workbench/ysyxSoC/perip/uart16550/rtl \
+            /home/ylj/ysyx-workbench/ysyxSoC/perip/spi/rtl
 
+PERIP_PATH := /home/ylj/ysyx-workbench/ysyxSoC/perip
+YSYXSOC_TOP := /home/ylj/ysyx-workbench/ysyxSoC/build/ysyxSoCFull.v
 
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
 				-O3 --x-assign fast --x-initial fast --noassert  -Wno-UNOPTFLAT  \
 				--trace \
-				--Wno-LATCH
+				--Wno-LATCH \
+				--timescale "1ns/1ns" \
+				--no-timing
 
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
@@ -21,7 +27,9 @@ default: $(BIN)
 $(shell mkdir -p $(BUILD_DIR))
 
 VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
-CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
+CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp") \
+		$(shell find $(abspath $(PERIP_PATH)) -name "*.v") \
+		$(YSYXSOC_TOP)
 
 INCFLAGS = $(addprefix -I, $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
@@ -40,7 +48,9 @@ all: default
 run: $(BIN)
 	@echo "Running simulation with $(PROGRAM_BIN)..."
 	@$(BIN) $(PROGRAM_BIN)
-
+# run: $(BIN)
+# 	@$^
+	
 clean:
 	rm -rf $(BUILD_DIR)
 

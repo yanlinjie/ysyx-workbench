@@ -1,34 +1,107 @@
-module riscv32(
-    input                               clk                        ,
-    input                               rst                        ,
+module ysyx_25020033
+(
+    input                               clock                      ,
+    input                               reset                      ,
 
-    //AR master读地址
-    output reg         [  31:0]         araddr                     ,
-    output reg                          arvalid                    ,
-    input                               arready                    ,
+    input                               io_interrupt               ,
+//写地址通道
+    input                               io_master_awready          ,
+    output                              io_master_awvalid          ,
+    output             [  31:0]         io_master_awaddr           ,
+    output             [   3:0]         io_master_awid             ,//写事务 ID
+    output             [   7:0]         io_master_awlen            ,//突发（burst）长度 awlen = 0 → 只传 1 个数据 awlen = 3 → 传输 4 个数据
+    output             [   2:0]         io_master_awsize           ,//表示每次数据传输的 宽度 是多少个字节 000:1byte ; 001:2byte ; 010:4byte .... 
+    output             [   1:0]         io_master_awburst          ,//突发传输类型
+//写数据
+    input                               io_master_wready           ,
+    output                              io_master_wvalid           ,
+    output             [  31:0]         io_master_wdata            ,
+    output             [   3:0]         io_master_wstrb            ,
+    output                              io_master_wlast            ,//标记写数据通道中一组 burst 的最后一拍
+//写响应
+    output                              io_master_bready           ,
+    input                               io_master_bvalid           ,
+    input              [   1:0]         io_master_bresp            ,
+    input              [   3:0]         io_master_bid              ,
+//读地址
+    input                               io_master_arready          ,
+    output reg                          io_master_arvalid          ,
+    output reg         [  31:0]         io_master_araddr           ,
+    output reg         [   3:0]         io_master_arid             ,
+    output reg         [   7:0]         io_master_arlen            ,
+    output reg         [   2:0]         io_master_arsize           ,
+    output reg         [   1:0]         io_master_arburst          ,
+//读数据
+    output reg                          io_master_rready           ,
+    input                               io_master_rvalid           ,
+    input              [   1:0]         io_master_rresp            ,
+    input              [  31:0]         io_master_rdata            ,
+    input                               io_master_rlast            ,
+    input              [   3:0]         io_master_rid              ,
+//下面的接口目前不使用！
+    output                              io_slave_awready           ,
+    input                               io_slave_awvalid           ,
+    input              [  31:0]         io_slave_awaddr            ,
+    input              [   3:0]         io_slave_awid              ,
+    input              [   7:0]         io_slave_awlen             ,
+    input              [   2:0]         io_slave_awsize            ,
+    input              [   1:0]         io_slave_awburst           ,
+    output                              io_slave_wready            ,
+    input                               io_slave_wvalid            ,
+    input              [  31:0]         io_slave_wdata             ,
+    input              [   3:0]         io_slave_wstrb             ,
+    input                               io_slave_wlast             ,
+    input                               io_slave_bready            ,
+    output                              io_slave_bvalid            ,
+    output             [   1:0]         io_slave_bresp             ,
+    output             [   3:0]         io_slave_bid               ,
+    output                              io_slave_arready           ,
+    input                               io_slave_arvalid           ,
+    input              [  31:0]         io_slave_araddr            ,
+    input              [   3:0]         io_slave_arid              ,
+    input              [   7:0]         io_slave_arlen             ,
+    input              [   2:0]         io_slave_arsize            ,
+    input              [   1:0]         io_slave_arburst           ,
+    input                               io_slave_rready            ,
+    output                              io_slave_rvalid            ,
+    output             [   1:0]         io_slave_rresp             ,
+    output             [  31:0]         io_slave_rdata             ,
+    output                              io_slave_rlast             ,
+    output             [   3:0]         io_slave_rid                
 
-    //R master 读数据
-    input              [  31:0]         rdata                      ,
-    input              [   1:0]         rresp                      ,
-    input                               rvalid                     ,
-    output reg                          rready                     ,
+    // //AR master读地址
+    // output reg         [  31:0]         araddr                     ,
+    // output reg                          arvalid                    ,
+    // input                               arready                    ,
 
-    //AW master 写地址 未完善
-    output             [  31:0]         awaddr                     ,
-    output                              awvalid                    ,
-    input                               awready                    ,
+    // //R master 读数据
+    // input              [  31:0]         rdata                      ,
+    // input              [   1:0]         rresp                      ,
+    // input                               rvalid                     ,
+    // output reg                          rready                     ,
 
-    //W master 写数据  未完善
-    output             [  31:0]         wdata                      ,
-    output             [   3:0]         wstrb                      ,
-    output                              wvalid                     ,
-    input                               wready                     ,
+    // //AW master 写地址 未完善
+    // output             [  31:0]         awaddr                     ,
+    // output                              awvalid                    ,
+    // input                               awready                    ,
+
+    // //W master 写数据  未完善
+    // output             [  31:0]         wdata                      ,
+    // output             [   3:0]         wstrb                      ,
+    // output                              wvalid                     ,
+    // input                               wready                     ,
     
-    // // B 写回复
-    input              [   1:0]         bresp                      ,
-    input                               bvalid                     ,
-    output                              bready                      
+    // // // B 写回复
+    // input              [   1:0]         bresp                      ,
+    // input                               bvalid                     ,
+    // output                              bready                      
 );
+wire clk;
+wire rst;
+
+assign clk = clock;
+assign rst = reset;
+
 //握手总线信号
 wire                                    inst_valid                 ;
 wire                                    id_ready                   ;
@@ -91,37 +164,44 @@ wire                                    s2_bready                  ;
 
 //读-master: IFU/LSU
 always @(*) begin
-        arvalid  = 1'b0;
-        rready = 1'b0;
+        io_master_arvalid  = 1'b0;
+        io_master_rready = 1'b0;
     if (lsu_arvalid | lsu_rready) begin
-        if (lsu_araddr == 32'ha000_0048 | lsu_araddr == 32'ha000_004c) begin
-            // $display("111");
-            s2_araddr = lsu_araddr ;
-            s2_arvalid   = lsu_arvalid;
-            lsu_arready = s2_arready;
+        // if (lsu_araddr == 32'ha000_0048 | lsu_araddr == 32'ha000_004c) begin
+        //     s2_araddr = lsu_araddr ;
+        //     s2_arvalid   = lsu_arvalid;
+        //     lsu_arready = s2_arready;
 
-            lsu_rdata = s2_rdata;                                       
-            lsu_rvalid = s2_rvalid;                                    
-            s2_rready = lsu_rready; 
-        end else 
+        //     lsu_rdata = s2_rdata;                                       
+        //     lsu_rvalid = s2_rvalid;                                    
+        //     s2_rready = lsu_rready; 
+        // end else 
         begin
-                araddr = ((lsu_araddr - 32'h80000000 )>>2) ;
-                arvalid   = lsu_arvalid;
-                lsu_arready = arready;
+                io_master_araddr = {lsu_araddr[31:2] ,2'b0} ;
+                io_master_arvalid   = lsu_arvalid;
+                lsu_arready = io_master_arready;
+        io_master_arid = 0;
+        io_master_arlen = 0;
+        io_master_arsize = 3'b010;
+        io_master_arburst = 2'b11;
 
-                lsu_rdata = rdata;                                       
-                lsu_rvalid = rvalid;                                    
-                rready = lsu_rready;  
+                lsu_rdata = io_master_rdata;                                       
+                lsu_rvalid = io_master_rvalid;                                    
+                io_master_rready = lsu_rready;  
         end
                                    
     end else if(ifu_arvalid | ifu_rready) begin
-        araddr = ((ifu_araddr - 32'h80000000 )>>2);
-        arvalid   = ifu_arvalid;
-        ifu_arready = arready;
+        io_master_araddr = ifu_araddr;
+        io_master_arvalid   = ifu_arvalid;
+        ifu_arready = io_master_arready;
+        io_master_arid = 0;
+        io_master_arlen = 0;
+        io_master_arsize = 3'b010;
+        io_master_arburst = 2'b11;
 
-        ifu_rdata = rdata;
-        ifu_rvalid = rvalid;
-        rready = ifu_rready;
+        ifu_rdata = io_master_rdata;
+        ifu_rvalid = io_master_rvalid;
+        io_master_rready = ifu_rready;
     end
 end
 
@@ -399,18 +479,18 @@ LSU u_LSU(
     .rvalid                            (lsu_rvalid                ),
     .rready                            (lsu_rready                ),
 
-    .ls_write_mem_addr                 (awaddr                    ),
-    .awvalid                           (awvalid                   ),
-    .awready                           (awready                   ),
+    .ls_write_mem_addr                 (io_master_awaddr                    ),
+    .awvalid                           (io_master_awvalid                   ),
+    .awready                           (io_master_awready                   ),
 
-    .ls_mem_data                       (wdata                     ),
-    .wmask                             (wstrb                     ),
-    .wvalid                            (wvalid                    ),
-    .wready                            (wready                    ),
+    .ls_mem_data                       (io_master_wdata                     ),
+    .wmask                             (io_master_wstrb                     ),
+    .wvalid                            (io_master_wvalid                    ),
+    .wready                            (io_master_wready                    ),
 
-    .bresp                             (bresp                     ),//未添加
-    .bvalid                            (bvalid                    ),//未添加
-    .bready                            (bready                    ),//未添加
+    .bresp                             (io_master_bresp                     ),//未添加
+    .bvalid                            (io_master_bvalid                    ),//未添加
+    .bready                            (io_master_bready                    ),//未添加
 
     .ex_valid                          (ex_valid                  ),
     .wb_ready                          (wb_ready                  ),

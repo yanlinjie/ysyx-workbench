@@ -23,9 +23,99 @@ static uint8_t *pmem = NULL;
 #else // CONFIG_PMEM_GARRAY
 static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 #endif
+// #ifdef CONFIG_TARGET_SHARE
+
+// // 如果是共享对象（REF），就定义这两个宏
+// #define MROM_BASE  0x20000000
+// #define MROM_SIZE  (4 * 1024)
+
+// #define SRAM_BASE  0x0f000000
+// #define SRAM_SIZE  (16 * 1024 * 1024)//大小先不管了
+// static uint8_t rom[MROM_SIZE] PG_ALIGN = {};
+// static uint8_t pmem[SRAM_SIZE] PG_ALIGN = {};
+// uint8_t* guest_to_host_rom(paddr_t paddr) { return rom + paddr - MROM_BASE; }//mrom
+
+// uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - SRAM_BASE; }//pmem
+
+// // paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }//目前好像还没使用到这个函数
+// static word_t pmem_read_rom(paddr_t addr, int len) {
+//   word_t ret = host_read(guest_to_host_rom(addr), len);
+//   return ret;
+// }
+// static word_t pmem_read(paddr_t addr, int len) {
+//   word_t ret = host_read(guest_to_host(addr), len);
+//   return ret;
+// }
+
+// static void pmem_write(paddr_t addr, int len, word_t data) {
+//   host_write(guest_to_host(addr), len, data);
+// }
+
+// // static void out_of_bound(paddr_t addr) {
+// //   panic("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
+// //       addr, PMEM_LEFT, PMEM_RIGHT, cpu.pc);
+// // }
+
+// void init_mem() {
+// #if   defined(CONFIG_PMEM_MALLOC)
+//   pmem = malloc(CONFIG_MSIZE);
+//   assert(pmem);
+// #endif
+//   IFDEF(CONFIG_MEM_RANDOM, memset(rom, rand(), CONFIG_MSIZE));
+//   IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), CONFIG_MSIZE));
+
+//   Log("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
+// }
+
+
+// void display_pread(paddr_t addr, int len) {
+//   printf("pread at " FMT_PADDR " len=%d\n", addr, len);
+// }
+
+// void display_pwrite(paddr_t addr, int len, word_t data) {
+//   printf("pwrite at " FMT_PADDR " len=%d, data=" FMT_WORD "\n", addr, len, data);
+// }
+// word_t paddr_read_rom(paddr_t addr, int len) {
+//   // display_pread(addr, len);
+//   // printf("pread at " FMT_PADDR " len=%d, data=" FMT_WORD "\n", addr, len, pmem_read(addr, len))
+//   IFDEF(CONFIG_MTRACE, display_pread(addr, len));
+
+//   if (likely(in_pmem(addr))) return pmem_read_rom(addr, len);
+//   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
+//   // out_of_bound(addr);
+//   return 0;
+// }
+// word_t paddr_read(paddr_t addr, int len) {
+//   // display_pread(addr, len);
+//   // printf("pread at " FMT_PADDR " len=%d, data=" FMT_WORD "\n", addr, len, pmem_read(addr, len))
+//   IFDEF(CONFIG_MTRACE, display_pread(addr, len));
+
+//   if (likely(in_pmem(addr))) return pmem_read(addr, len);
+//   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
+//   // out_of_bound(addr);
+//   return 0;
+// }
+
+// void paddr_write(paddr_t addr, int len, word_t data) {
+//   // display_pwrite(addr, len, data);
+//   IFDEF(CONFIG_MTRACE, display_pwrite(addr, len, data));
+//   if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
+//   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
+//   // out_of_bound(addr);
+// }
+
+// static word_t pmem_read(paddr_t addr, int len) {
+//   word_t ret = host_read(guest_to_host(addr), len);
+//   return ret;
+// }
+
+// static void pmem_write(paddr_t addr, int len, word_t data) {
+//   host_write(guest_to_host(addr), len, data);
+// }
+// #endif
 
 uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
-paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
+paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }//目前好像还没使用到这个函数
 
 static word_t pmem_read(paddr_t addr, int len) {
   word_t ret = host_read(guest_to_host(addr), len);
@@ -36,10 +126,10 @@ static void pmem_write(paddr_t addr, int len, word_t data) {
   host_write(guest_to_host(addr), len, data);
 }
 
-static void out_of_bound(paddr_t addr) {
-  panic("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
-      addr, PMEM_LEFT, PMEM_RIGHT, cpu.pc);
-}
+// static void out_of_bound(paddr_t addr) {
+//   panic("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
+//       addr, PMEM_LEFT, PMEM_RIGHT, cpu.pc);
+// }
 
 void init_mem() {
 #if   defined(CONFIG_PMEM_MALLOC)
@@ -49,6 +139,10 @@ void init_mem() {
   IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), CONFIG_MSIZE));
   Log("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
 }
+
+
+
+
 
 void display_pread(paddr_t addr, int len) {
   printf("pread at " FMT_PADDR " len=%d\n", addr, len);
@@ -65,7 +159,7 @@ word_t paddr_read(paddr_t addr, int len) {
 
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
-  out_of_bound(addr);
+  // out_of_bound(addr);
   return 0;
 }
 
