@@ -8,10 +8,10 @@ module ysyx_25020033
     input                               io_master_awready          ,
     output                              io_master_awvalid          ,
     output             [  31:0]         io_master_awaddr           ,
-    output             [   3:0]         io_master_awid             ,//写事务 ID
-    output             [   7:0]         io_master_awlen            ,//突发（burst）长度 awlen = 0 → 只传 1 个数据 awlen = 3 → 传输 4 个数据
-    output             [   2:0]         io_master_awsize           ,//表示每次数据传输的 宽度 是多少个字节 000:1byte ; 001:2byte ; 010:4byte .... 
-    output             [   1:0]         io_master_awburst          ,//突发传输类型
+    output  reg           [   3:0]         io_master_awid             ,//写事务 ID
+    output   reg          [   7:0]         io_master_awlen            ,//突发（burst）长度 awlen = 0 → 只传 1 个数据 awlen = 3 → 传输 4 个数据
+    output   reg          [   2:0]         io_master_awsize           ,//表示每次数据传输的 宽度 是多少个字节 000:1byte ; 001:2byte ; 010:4byte .... 
+    output    reg         [   1:0]         io_master_awburst          ,//突发传输类型
 //写数据
     input                               io_master_wready           ,
     output                              io_master_wvalid           ,
@@ -166,6 +166,7 @@ wire                                    s2_bready                  ;
 always @(*) begin
         io_master_arvalid  = 1'b0;
         io_master_rready = 1'b0;
+        lsu_rvalid = 1'b0;
     if (lsu_arvalid | lsu_rready) begin
         // if (lsu_araddr == 32'ha000_0048 | lsu_araddr == 32'ha000_004c) begin
         //     s2_araddr = lsu_araddr ;
@@ -176,14 +177,29 @@ always @(*) begin
         //     lsu_rvalid = s2_rvalid;                                    
         //     s2_rready = lsu_rready; 
         // end else 
-        begin
-                io_master_araddr = {lsu_araddr[31:2] ,2'b0} ;
+        if (lsu_araddr == 32'h10000000 | lsu_araddr == 32'h10000001 | lsu_araddr == 32'h10000002 |lsu_araddr == 32'h10000003 |lsu_araddr == 32'h10000004 |lsu_araddr == 32'h10000005 |lsu_araddr == 32'h10000006 |lsu_araddr == 32'h10000007) begin
+                io_master_araddr = lsu_araddr ;
                 io_master_arvalid   = lsu_arvalid;
                 lsu_arready = io_master_arready;
-        io_master_arid = 0;
-        io_master_arlen = 0;
-        io_master_arsize = 3'b010;
-        io_master_arburst = 2'b11;
+
+                io_master_arid = 0;
+                io_master_arlen = 0;
+                io_master_arsize = 3'b000;
+                io_master_arburst = 2'b11;
+
+                lsu_rdata = io_master_rdata;                                       
+                lsu_rvalid = io_master_rvalid;                                    
+                io_master_rready = lsu_rready;  
+        end else 
+        begin
+                io_master_araddr = lsu_araddr ;
+                io_master_arvalid   = lsu_arvalid;
+                lsu_arready = io_master_arready;
+
+                io_master_arid = 0;
+                io_master_arlen = 0;
+                io_master_arsize = 3'b010;
+                io_master_arburst = 2'b11;
 
                 lsu_rdata = io_master_rdata;                                       
                 lsu_rvalid = io_master_rvalid;                                    
@@ -204,6 +220,20 @@ always @(*) begin
         io_master_rready = ifu_rready;
     end
 end
+
+always @(*) begin
+        io_master_awid   = 0;   
+        io_master_awlen     = 0;
+        io_master_awsize    = 3'b010;
+        io_master_awburst   =2'b11;
+    if (io_master_awaddr == 32'h10000000 | io_master_awaddr == 32'h10000001 | io_master_awaddr == 32'h10000002 |io_master_awaddr == 32'h10000003 |io_master_awaddr == 32'h10000004 |io_master_awaddr == 32'h10000005 |io_master_awaddr == 32'h10000006 |io_master_awaddr == 32'h10000007) begin
+        io_master_awid   = 0;   
+        io_master_awlen     = 0;
+        io_master_awsize    = 3'b000;
+        io_master_awburst   =2'b11;
+    end
+end
+
 
 clint_slave #(
     .DW                                (32                        ),

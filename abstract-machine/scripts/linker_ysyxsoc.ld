@@ -31,6 +31,14 @@ SECTIONS {
   } > SRAM
 
   _data_load = LOADADDR(.data);
+  _sdata_lma = LOADADDR(.sdata);
+
+  .sdata : AT(LOADADDR(.data) + SIZEOF(.data)) {
+    _sdata_start = .;
+    *(.sdata .sdata.*)
+    . = ALIGN(4);
+    _sdata_end = .;
+  } > SRAM
 
   .bss : {
     _bss_start = .;
