@@ -67,7 +67,7 @@ end
 // next_pc 更新
 always @(posedge clk or posedge rst) begin
     if (rst)begin
-        next_pc <= 32'h2000_0000;            
+        next_pc <= 32'h3000_0000;    //复位地址        
     end
     else if (state == IDLE && ls_valid)
     begin

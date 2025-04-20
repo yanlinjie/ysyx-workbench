@@ -30,6 +30,33 @@ extern "C" {
 #define  MROM_SIZE  0x1000        // 4KB
 #define  MROM_WORDS  MROM_SIZE / 4 // 1024 words
 
+//falsh
+#define FLASH_BASE 0x30000000
+#define FLASH_SIZE 0x10000000  //0x3000_0000~0x3fff_ffff
+#define  FLASH_WORDS FLASH_SIZE / 4
+
+uint32_t flash[FLASH_WORDS] = {
+  // 0x100007b7, 
+  // 0x04100713, 
+  // 0x00e78023, 
+  // 0x00a00713, 
+  // 0x00e78023,
+  // 0x00100073,
+};
+void load_flash_bin(const char *filename) {
+  FILE *f = fopen(filename, "rb");
+  if (!f) {
+      perror("[FLASH] Failed to open bin file");
+      exit(EXIT_FAILURE);
+  }
+
+  size_t read_words = fread(flash, sizeof(uint32_t), FLASH_WORDS, f);
+  fclose(f);
+
+  printf("[FLASH] Loaded %zu words (%zu bytes) from %s\n",
+         read_words, read_words * sizeof(uint32_t), filename);
+}
+
 uint32_t mrom[MROM_WORDS] = {
   // 0x100007b7, 
   // 0x04100713, 
@@ -70,7 +97,12 @@ uint64_t get_time() {
   return now_us - start_us;  // 返回相对时间
 }
 
-extern "C" void flash_read(int32_t addr, int32_t *data) { assert(0); }
+extern "C" void flash_read(int32_t addr, int32_t *data) { 
+
+  uint32_t index = ((uint32_t)addr) >> 2;
+  *data = (int32_t)flash[index];
+  
+}
 extern "C" void mrom_read(int32_t addr, int32_t *data) {
   // 范围检查
   if ((uint32_t)addr < MROM_BASE || (uint32_t)addr >= MROM_BASE + MROM_SIZE) {
@@ -301,8 +333,10 @@ int main(int argc, char** argv) {
   // Verilated::commandArgs(argc, argv);
 
   welcome();
-  load_mrom_bin(argv[1]);
-  // load_mrom_bin("/home/ylj/ysyx-workbench/test/uart_test/image.bin");
+  // load_mrom_bin(argv[1]);
+  load_flash_bin(argv[1]);
+
+  // load_flash_bin("/home/ylj/ysyx-workbench/test/char-test/build/uart_test.bin");
 
 
   rst(10);
@@ -344,15 +378,15 @@ int main(int argc, char** argv) {
 //     difftest_exec(1);
 // }
 // prev_inst = top->rootp->top__DOT__u_riscv32__DOT__inst;
-if(++cycle_count == 4000000)
-{
-#ifdef WAVE_ON
-  tfp->close();
-  delete tfp;
-#endif
-  delete top;
-  exit(1);
-}
+// if(++cycle_count == 4000000)
+// {
+// #ifdef WAVE_ON
+//   tfp->close();
+//   delete tfp;
+// #endif
+//   delete top;
+//   exit(1);
+// }
 
   }
 #ifdef WAVE_ON

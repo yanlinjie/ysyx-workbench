@@ -1,7 +1,7 @@
 ENTRY(_start)
 
 MEMORY {
-  MROM (rx)  : ORIGIN = 0x20000000, LENGTH = 4K
+  MROM (rx)  : ORIGIN = 0x30000000, LENGTH = 16M
   SRAM (xrw) : ORIGIN = 0x0f000000, LENGTH = 8K
 }
 

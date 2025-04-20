@@ -8,10 +8,10 @@ module ysyx_25020033
     input                               io_master_awready          ,
     output                              io_master_awvalid          ,
     output             [  31:0]         io_master_awaddr           ,
-    output  reg           [   3:0]         io_master_awid             ,//写事务 ID
-    output   reg          [   7:0]         io_master_awlen            ,//突发（burst）长度 awlen = 0 → 只传 1 个数据 awlen = 3 → 传输 4 个数据
-    output   reg          [   2:0]         io_master_awsize           ,//表示每次数据传输的 宽度 是多少个字节 000:1byte ; 001:2byte ; 010:4byte .... 
-    output    reg         [   1:0]         io_master_awburst          ,//突发传输类型
+    output reg         [   3:0]         io_master_awid             ,//写事务 ID
+    output reg         [   7:0]         io_master_awlen            ,//突发（burst）长度 awlen = 0 → 只传 1 个数据 awlen = 3 → 传输 4 个数据
+    output reg         [   2:0]         io_master_awsize           ,//表示每次数据传输的 宽度 是多少个字节 000:1byte ; 001:2byte ; 010:4byte .... 
+    output reg         [   1:0]         io_master_awburst          ,//突发传输类型
 //写数据
     input                               io_master_wready           ,
     output                              io_master_wvalid           ,
