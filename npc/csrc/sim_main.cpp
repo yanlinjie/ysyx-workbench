@@ -36,12 +36,12 @@ extern "C" {
 #define  FLASH_WORDS FLASH_SIZE / 4
 
 uint32_t flash[FLASH_WORDS] = {
-  // 0x100007b7, 
-  // 0x04100713, 
-  // 0x00e78023, 
-  // 0x00a00713, 
-  // 0x00e78023,
-  // 0x00100073,
+  0x100007b7, 
+  0x04100713, 
+  0x00e78023, 
+  0x00a00713, 
+  0x00e78023,
+  0x00100073,
 };
 void load_flash_bin(const char *filename) {
   FILE *f = fopen(filename, "rb");

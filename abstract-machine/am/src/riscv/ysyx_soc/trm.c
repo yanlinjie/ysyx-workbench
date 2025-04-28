@@ -1,9 +1,10 @@
 #include <am.h>
 #include <npc.h>
 //这里直接调用了c的标准库，不知道会不会对后续有什么影响
-#include <stdint.h>
-#include <string.h>
-
+// #include <stdint.h>
+// #include <string.h>
+#include <klib.h>
+#include <klib-macros.h>
 
 #define UART_BASE     0x10000000L
 
@@ -23,7 +24,8 @@ extern uint8_t _data_end[];
 extern uint8_t _bss_start[];
 extern uint8_t _bss_end[];
 extern uint8_t _sdata_lma[], _sdata_start[], _sdata_end[];
-
+extern uint8_t _heap_start[];
+extern uint8_t _heap_end[];
 
 void uart_init() {
   // 1. 设置DLAB=1，准备设置波特率除数
@@ -52,7 +54,7 @@ void bootloader() {
     memset(_bss_start, 0, _bss_end - _bss_start);
 }
 
-
+Area heap = RANGE(&_heap_start, &_heap_end);
 
 static const char mainargs[MAINARGS_MAX_LEN] = MAINARGS_PLACEHOLDER; // defined in CFLAGS
 
@@ -75,6 +77,15 @@ void _trm_init() {
 
   bootloader();
   uart_init();
+  uint32_t vendor_id, arch_id;
+
+  // 读取 mvendorid 和 marchid
+  asm volatile("csrr %0, mvendorid" : "=r"(vendor_id));
+  asm volatile("csrr %0, marchid" : "=r"(arch_id));
+  printf("vendor_id: 0x%x \n arch_id: 0x%d \n", vendor_id ,arch_id);
+  printf("hello\n");
+  // halt(0);
+
   int ret = main(mainargs);
 
   halt(ret);

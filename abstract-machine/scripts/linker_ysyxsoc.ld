@@ -1,8 +1,11 @@
 ENTRY(_start)
 
 MEMORY {
+  /* MROM (rx)  : ORIGIN = 0x20000000, LENGTH = 4K */
+  /* SRAM (xrw) : ORIGIN = 0x0f000000, LENGTH = 8K */
+
   MROM (rx)  : ORIGIN = 0x30000000, LENGTH = 16M
-  SRAM (xrw) : ORIGIN = 0x0f000000, LENGTH = 8K
+  SRAM (xrw) : ORIGIN = 0x80000000, LENGTH = 4M
 }
 
 SECTIONS {
@@ -51,11 +54,12 @@ SECTIONS {
   /* === 堆区：.bss之后 2KB === */
   . = ALIGN(4);
   _heap_start = .;
-  . = . + 0x800;  /* 2KB heap */
+  /* . = . + 0x800;   */
+  . = . + 0x2000;  
   _heap_end = .;
 
   /* === 栈区：SRAM末尾向下分配2KB === */
-  _stack_bottom = ORIGIN(SRAM) + LENGTH(SRAM) - 0x800;
+  _stack_bottom = ORIGIN(SRAM) + LENGTH(SRAM) - 0x200000;
   _stack_pointer = ORIGIN(SRAM) + LENGTH(SRAM);
 
   _end = .;

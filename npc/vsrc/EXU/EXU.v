@@ -69,7 +69,8 @@ localparam                              PC_JUMP = 3'd2          ;//等待下游�
 
 // ========= CSR 寄存器 =========
 reg                    [  31:0]         mtvec, mstatus, mcause, mepc;
-
+reg [31:0] mvendorid = 32'h7973_7978;
+reg [31:0] marchid   = 32'h017d_c681;
 reg                    [   2:0]         state, next_state          ;
 
 
@@ -160,7 +161,10 @@ always @(*) begin
                 csr_rd_data = (imm == 32'h305) ? mtvec :
                               (imm == 32'h300) ? mstatus :
                               (imm == 32'h342) ? mcause :
-                              (imm == 32'h341) ? mepc : 32'b0;
+                              (imm == 32'h341) ? mepc : 
+                              (imm == 32'hF11) ? mvendorid : 
+                              (imm == 32'hF12) ? marchid  :
+                              32'b0;
                 csr_rd_addr = rd_addr;
 
                 case (alu_ctr)
@@ -178,6 +182,8 @@ always @(*) begin
                             32'h300: mstatus = mstatus | rs1_data;
                             32'h342: mcause  = mcause  | rs1_data;
                             32'h341: mepc    = mepc    | rs1_data;
+                            32'hF11: mvendorid = mvendorid | rs1_data;
+                            32'hF12: marchid = marchid | rs1_data;
                         endcase
                     end
                     default:begin end

@@ -327,7 +327,7 @@ reg [6:0] func7;
                         read_mem_en = 1'b0;            //1bit read mem en
                         // alu_ctr = 5'b00000;                //5bit control alu
                         next_pcimm_rs1imm = 1'b0;      //1bit 0:pc += imm ; pc=rs1+imm;
-                        imm_ctr = 3'b000;              //3bit control imm;
+                        imm_ctr = 3'b110;              //3bit control imm;
                         out_rddata_memaddr =1'b0;     //1bit alu out -> rd_data or memaddr  0:rd_data; 1:memaddr;
                         jump = 2'b00;       //jal :01  jalr: 10  default:00
                         // dpi_exit_simulation();
@@ -379,6 +379,9 @@ always @(*) begin
             3'b101:begin
                 imm_32[10] = 0;
                 imm_32 = {{20{instruction[31]}}, instruction[31:20]};
+            end
+            3'b110:begin 
+                imm_32 = {20'b0, instruction[31:20]};//3
             end
             3'b111:begin
                 imm_32 = 32'b0;
