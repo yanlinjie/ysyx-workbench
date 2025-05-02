@@ -168,16 +168,15 @@ always @(*) begin
         io_master_rready = 1'b0;
         lsu_rvalid = 1'b0;
     if (lsu_arvalid | lsu_rready) begin
-        // if (lsu_araddr == 32'ha000_0048 | lsu_araddr == 32'ha000_004c) begin
-        //     s2_araddr = lsu_araddr ;
-        //     s2_arvalid   = lsu_arvalid;
-        //     lsu_arready = s2_arready;
+        if (lsu_araddr == 32'ha000_0048 | lsu_araddr == 32'ha000_004c) begin
+            s2_araddr = lsu_araddr ;
+            s2_arvalid   = lsu_arvalid;
+            lsu_arready = s2_arready;
 
-        //     lsu_rdata = s2_rdata;                                       
-        //     lsu_rvalid = s2_rvalid;                                    
-        //     s2_rready = lsu_rready; 
-        // end else 
-        if (lsu_araddr == 32'h10000000 | lsu_araddr == 32'h10000001 | lsu_araddr == 32'h10000002 |lsu_araddr == 32'h10000003 |lsu_araddr == 32'h10000004 |lsu_araddr == 32'h10000005 |lsu_araddr == 32'h10000006 |lsu_araddr == 32'h10000007) begin
+            lsu_rdata = s2_rdata;                                       
+            lsu_rvalid = s2_rvalid;                                    
+            s2_rready = lsu_rready; 
+        end else  if (lsu_araddr == 32'h10000000 | lsu_araddr == 32'h10000001 | lsu_araddr == 32'h10000002 |lsu_araddr == 32'h10000003 |lsu_araddr == 32'h10000004 |lsu_araddr == 32'h10000005 |lsu_araddr == 32'h10000006 |lsu_araddr == 32'h10000007) begin
                 io_master_araddr = lsu_araddr ;
                 io_master_arvalid   = lsu_arvalid;
                 lsu_arready = io_master_arready;
